@@ -1,0 +1,37 @@
+# Systemd unit for the PS Core Operations dashboard hub (port 8820).
+#
+# One-time setup on the server:
+#   1. Edit WorkingDirectory / User / Group below to match where you unzip
+#      this repo and which Linux user has the Kerberos ticket / keytab
+#      needed to reach Hive.
+#   2. sudo cp tools/ps-core-ops-dashboard.service /etc/systemd/system/
+#   3. sudo systemctl daemon-reload
+#   4. sudo systemctl enable --now ps-core-ops-dashboard
+#
+# Check on it:
+#   sudo systemctl status ps-core-ops-dashboard
+#   sudo journalctl -u ps-core-ops-dashboard -f
+#
+# Restart after a config/code change:
+#   sudo systemctl restart ps-core-ops-dashboard
+
+[Unit]
+Description=PS Core Operations Dashboard Hub (port 8820)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/path/to/ps-core-ops-dashboard
+ExecStart=/usr/bin/python3.9 /path/to/ps-core-ops-dashboard/hub.py --host 0.0.0.0 --port 8820
+Restart=on-failure
+RestartSec=5
+User=ossuser
+Group=ossuser
+# If Hive auth needs a Kerberos ticket cache set up outside this unit
+# (e.g. renewed by cron via kinit -kt), point at the same cache here:
+# Environment=KRB5CCNAME=FILE:/tmp/krb5cc_ps_core_ops
+StandardOutput=append:/path/to/ps-core-ops-dashboard/hub.log
+StandardError=append:/path/to/ps-core-ops-dashboard/hub.log
+
+[Install]
+WantedBy=multi-user.target

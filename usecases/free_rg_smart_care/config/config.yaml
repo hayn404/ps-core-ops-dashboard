@@ -1,0 +1,63 @@
+# ── Database connection ────────────────────────────────────────────────────
+# Same connection stack as Network-Service-Degradation dashboard.
+database:
+  # "jdbc" = connect like DBeaver (Java Kerberos honors krb5.ini).
+  # "sasl" = pyhive/thrift path (only works where KDC is on standard port 88).
+  mode: "jdbc"
+  host: "10.74.230.68"
+  port: 22550
+  schema: "ps"
+  kerberos_service_name: "spark2x"
+  kerberos_host: "hadoop.hadoop.com"
+
+  # JDBC settings (only used when mode: "jdbc")
+  jdbc:
+    driver_class: "org.apache.hive.jdbc.HiveDriver"
+    principal: "spark2x/hadoop.hadoop.com@HADOOP.COM"
+    sasl_qop: "auth-conf"
+
+    jars_dir: "C:/ProgramData/MIT/Kerberos5/hive-jdbc"
+    krb5_conf: "C:/ProgramData/MIT/Kerberos5/krb5.ini"
+    jaas_conf: "C:/Windows/jaas.conf"
+    jvm_path: "C:/Tools/jdk-11.0.31+11-jre/bin/server/jvm.dll"
+
+# ── Data source ───────────────────────────────────────────────────────────
+# Table pattern for DETAIL_CDR_SGIDIAMETER rotated daily tables.
+# The script discovers tables matching this pattern and probes their
+# MIN/MAX(TRANS_REQ_TIME_SEC) to learn which calendar day they hold.
+table_pattern: "DETAIL_CDR_SGIDIAMETER_%"
+
+# APN filter — comma-separated list. Leave empty to include ALL APNs.
+# Examples: "ETISALAT" or "ETISALAT,INTERNET.ETISALAT" or ""
+apn_filter: "ETISALAT,INTERNET.ETISALAT"
+
+# Interface ID filter (default 12 for Smart Care diameter CCR)
+interface_id: 12
+
+# Column holding the subscriber phone number in the CDR table
+# (exported alongside IMSI for the violations views)
+msisdn_column: "MSISDN"
+
+# ── Free Rating Groups configuration ───────────────────────────────────────
+# Maps rating_group ID -> (display_name, daily_capping_MB or None)
+# These are used for labeling, capping-flag logic, and RG filtering.
+free_rating_groups:
+  1202: { name: "Speed test", capping_mb: 500 }
+  1192: { name: "NTRA & Governmental", capping_mb: 500 }
+  1193: { name: "My Etisalat & Notifications", capping_mb: 250 }
+  1080: { name: "VPN", capping_mb: null }
+  1060: { name: "DNS", capping_mb: null }
+  1165: { name: "shuffle music", capping_mb: null }
+  1003: { name: "FB_AutoFlex", capping_mb: 50 }
+  1197: { name: "Ta3leemy", capping_mb: 500 }
+
+# ── Dashboard settings ─────────────────────────────────────────────────────
+visualization:
+  host: "127.0.0.1"
+  port: 8889
+
+# ── Headless report export (tools/export_report.py) ────────────────────────
+# Where the scheduled management report (.xlsx) is written on the server.
+# Relative paths resolve against the project root.
+report:
+  output_dir: "reports"

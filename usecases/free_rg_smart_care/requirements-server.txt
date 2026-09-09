@@ -1,0 +1,20 @@
+# Server (Linux) install — SASL mode only, no JDBC/Windows-only packages.
+# The server has no internet: install from the offline wheel folder instead:
+#   pip install --no-index --find-links offline_packages -r requirements-server.txt
+# (same pattern as the Network-Service-Degradation server deployment)
+
+# Core dashboard
+pandas
+plotly
+dash
+pyyaml
+xlsxwriter
+
+# Live-DB mode (Hive + Kerberos over SASL)
+pyhive
+thrift
+thrift_sasl
+pure-sasl
+# C sasl library (cyrus-sasl) — preferred on Linux
+sasl
+kerberos

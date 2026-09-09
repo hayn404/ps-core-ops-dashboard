@@ -1,0 +1,43 @@
+# ── Database connection ────────────────────────────────────────────────────
+# Kept exactly as the version already proven working on the Linux server
+# (SASL/thrift + Kerberos) — the JDBC/Windows path from the local dev
+# version was intentionally not carried over here.
+database:
+  host:                    "10.74.230.68"
+  port:                    22550
+  schema:                  "sdr_nethouse"
+  kerberos_service_name:   "spark2x"
+  # The Kerberos SPN is registered against a HOSTNAME, not an IP.
+  # Replace the placeholder below with what `host 10.74.230.68` on the
+  # server returns (or whatever FQDN your Kerberos admin tells you the
+  # spark2x service is registered under).
+  kerberos_host:           "hadoop.hadoop.com"
+  # Which IP family the live-DB _query() aggregates over.
+  #   "ipv6" (default) → filters 2c0f:fc88:% and 2c0f:fc89:%, groups by /48
+  #   "ipv4"           → filters 10./172.16-31/100.64-127 CGNAT, groups by /24
+  ip_family:               "ipv6"
+  # Fully-qualified cell->site mapping table used by the site job's join.
+  # Run `python tools/daily_update.py --check` to auto-discover the right
+  # name if this one doesn't exist.
+  site_map_table:          "default.cellmappingtest"
+
+# ── Table source ───────────────────────────────────────────────────────────
+# Because the warehouse rotates the per-day table numbering automatically
+# (today's 15-minute table is a different number from yesterday's), we don't
+# hard-code the list. Instead we ask Hive for whatever tables match the
+# pattern below at startup. New tables show up without any config edit.
+#
+# Use the 15-min pattern for hourly granularity (what the dashboard expects):
+table_pattern: "sdr_dyn_ide_soc_tcp_user_15m_%"
+
+# Backup pattern if you prefer the lighter 1-day tables:
+# table_pattern: "sdr_dyn_ide_soc_tcp_user_1day_%"
+
+# ── Dashboard settings ─────────────────────────────────────────────────────
+visualization:
+  # 0.0.0.0 so the dashboard is reachable over the network from the server
+  # (127.0.0.1, used in the local-laptop version, would only be reachable
+  # from the server itself). Adjust the port if 8820 isn't the one you have
+  # open on the server's firewall.
+  host: "0.0.0.0"
+  port: 8820

@@ -1,0 +1,12 @@
+pandas
+plotly
+dash
+pyyaml
+
+# Live-DB access (dashboard.py live mode and tools/daily_update.py).
+# Server (Linux) connection path — SASL/thrift over Kerberos, kept as-is
+# from the version already proven working there.
+pyhive
+thrift
+thrift_sasl
+pure-sasl

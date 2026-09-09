@@ -1,0 +1,30 @@
+# Combined requirements for the hub process (which imports and mounts both
+# use cases in a single Python process, so it needs the union of both
+# use cases' dependencies, plus Flask/Werkzeug for the landing page + mount).
+#
+# Server has no internet — install from the offline wheel folders instead:
+#   pip install --no-index \
+#       --find-links usecases/free_rg_smart_care/offline_packages \
+#       -r requirements.txt
+# (network_degradation didn't ship an offline_packages folder — if any
+# package below is missing from the free_rg one's wheels, grab it from
+# an internet-connected machine and drop the .whl in alongside the others.)
+
+# Hub / landing page
+flask
+werkzeug
+
+# Core dashboard (both use cases)
+pandas
+plotly
+dash
+pyyaml
+xlsxwriter
+
+# Live-DB access (Hive + Kerberos over SASL) — both use cases' connect_db()
+pyhive
+thrift
+thrift_sasl
+pure-sasl
+sasl
+kerberos

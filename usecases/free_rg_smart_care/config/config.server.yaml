@@ -1,0 +1,56 @@
+# ── Server config (Linux) ──────────────────────────────────────────────────
+# Copy of config.yaml adapted for the Linux server, following the same
+# pattern as the Network-Service-Degradation server deployment:
+#   * SASL connection path (pyhive/thrift + cyrus-sasl) — NO JDBC section
+#   * dashboard binds 0.0.0.0 so it can be reached once the port is opened
+#
+# Use it via:  FREE_RG_CONFIG=/path/to/config.server.yaml <command>
+#
+# Prereqs on the server:
+#   * /etc/krb5.conf pointing at the HADOOP.COM KDC
+#   * a Kerberos ticket for a principal allowed to read the ps schema
+#     (cron: use a keytab — see KRB5_KEYTAB/KRB5_PRINCIPAL in
+#      tools/run_daily_update.sh)
+
+database:
+  # "sasl" = pyhive/thrift path — this is what works on the Linux server.
+  mode: "sasl"
+  host: "10.74.230.68"
+  port: 22550
+  schema: "ps"
+  kerberos_service_name: "spark2x"
+  # The Kerberos SPN is registered against a HOSTNAME, not an IP.
+  kerberos_host: "hadoop.hadoop.com"
+
+# ── Data source ───────────────────────────────────────────────────────────
+table_pattern: "DETAIL_CDR_SGIDIAMETER_%"
+
+# APN filter — comma-separated list. Leave empty to include ALL APNs.
+apn_filter: "ETISALAT,INTERNET.ETISALAT"
+
+# Interface ID filter (default 12 for Smart Care diameter CCR)
+interface_id: 12
+
+# Column holding the subscriber phone number in the CDR table
+msisdn_column: "MSISDN"
+
+# ── Free Rating Groups configuration ───────────────────────────────────────
+free_rating_groups:
+  1202: { name: "Speed test", capping_mb: 500 }
+  1192: { name: "NTRA & Governmental", capping_mb: 500 }
+  1193: { name: "My Etisalat & Notifications", capping_mb: 250 }
+  1080: { name: "VPN", capping_mb: null }
+  1060: { name: "DNS", capping_mb: null }
+  1165: { name: "shuffle music", capping_mb: null }
+  1003: { name: "FB_AutoFlex", capping_mb: 50 }
+  1197: { name: "Ta3leemy", capping_mb: 500 }
+
+# ── Dashboard settings ─────────────────────────────────────────────────────
+# 0.0.0.0 = reachable from other machines once network security opens the port.
+visualization:
+  host: "0.0.0.0"
+  port: 8889
+
+# ── Headless report export (tools/export_report.py) ────────────────────────
+report:
+  output_dir: "reports"

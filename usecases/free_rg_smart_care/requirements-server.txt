@@ -18,3 +18,6 @@ pure-sasl
 # C sasl library (cyrus-sasl) — preferred on Linux
 sasl
 kerberos
+
+# ClickHouse ingestion/reads (tools/clickhouse_io.py, shared by both use cases)
+clickhouse-connect

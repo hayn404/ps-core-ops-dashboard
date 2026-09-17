@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import plotly.graph_objects as go
 import yaml
-from dash import Dash, Input, Output, State, callback, ctx, dash_table, dcc, html, no_update
+from dash import Dash, Input, Output, State, ctx, dash_table, dcc, html, no_update
 from dash import ALL
 
 warnings.filterwarnings("ignore")
@@ -38,6 +38,21 @@ except Exception:  # tools/ missing or broken — the compare panel degrades gra
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config", "config.yaml")
 
+# Top-level ps-core-ops-dashboard/tools/ holds the shared ClickHouse reader
+# used by every use case (three levels up: dashboard.py -> network_degradation
+# -> usecases -> repo root).
+import sys as _sys
+_TOP_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_TOP_TOOLS = os.path.join(_TOP_REPO_ROOT, "tools")
+if _TOP_TOOLS not in _sys.path:
+    _sys.path.insert(0, _TOP_TOOLS)
+try:
+    from clickhouse_io import read_last_n_days as _ch_read
+    CLICKHOUSE_AVAILABLE = True
+except Exception:
+    _ch_read = None
+    CLICKHOUSE_AVAILABLE = False
+
 GATEWAY_MAP = {
     27:     "RamsisPost_PDG25",  200036: "RamsisPost_PDG25",
     20:     "Aburawash_R1DG28",  200042: "Aburawash_R1DG28",
@@ -45,6 +60,14 @@ GATEWAY_MAP = {
     41:     "SV_UDG01",          200053: "SV_UDG01",
     26:     "AlexPost_ODG21",    200028: "AlexPost_ODG21",
     1:      "AlexAuto_XGG09",    200015: "AlexAuto_XGG09",
+    # --- Added for the ip_pools.xlsx / "TCP FR2 per pool" request ---
+    # 3 of the 4 gateways still missing their numeric ggsn_pgw_id. Run
+    # tools/discover_gw_ids.py and fill these in — everything downstream
+    # (the pools tab) will pick them up automatically once set correctly.
+    # 0: "R1DG18",   # TODO: replace 0 with the real ggsn_pgw_id
+    # 0: "YDG29",    # TODO: replace 0 with the real ggsn_pgw_id
+    # 0: "YDG30",    # TODO: replace 0 with the real ggsn_pgw_id
+    # 0: "TGG14",    # TODO: replace 0 with the real ggsn_pgw_id
 }
 GW_IDS_SQL = ", ".join(str(g) for g in GATEWAY_MAP)
 
@@ -195,22 +218,27 @@ def connect_db(config: dict):
 # Data loading
 # ---------------------------------------------------------------------------
 
-_GW_CASE_SQL = """CASE ggsn_pgw_id
-        WHEN 27 THEN 'RamsisPost_PDG25' WHEN 200036 THEN 'RamsisPost_PDG25'
-        WHEN 20 THEN 'Aburawash_R1DG28' WHEN 200042 THEN 'Aburawash_R1DG28'
-        WHEN 19 THEN 'Banisuif_FGG13'   WHEN 200019 THEN 'Banisuif_FGG13'
-        WHEN 41 THEN 'SV_UDG01'         WHEN 200053 THEN 'SV_UDG01'
-        WHEN 26 THEN 'AlexPost_ODG21'   WHEN 200028 THEN 'AlexPost_ODG21'
-        WHEN 1  THEN 'AlexAuto_XGG09'   WHEN 200015 THEN 'AlexAuto_XGG09'
-        ELSE CAST(ggsn_pgw_id AS STRING)
-    END"""
+_GW_CASE_SQL = "CASE ggsn_pgw_id\n" + "\n".join(
+    f"        WHEN {gid} THEN '{name}'" for gid, name in GATEWAY_MAP.items()
+) + "\n        ELSE CAST(ggsn_pgw_id AS STRING)\n    END"
 
-# IPv6: /48 = first three ":"-separated segments of the address.
-# Bounds-safe: Spark's SPLIT drops trailing empty strings, so an address like
-# "2c0f:fc89::" yields a 2-element array and SPLIT(...)[2] throws
-# "array index out of bounds" server-side (it did on table 20652).
+# IPv6: prefix = first FOUR ":"-separated segments of the address (/64).
+# Widened from 3 segments (/48) so individual pools from ip_pools.xlsx can
+# be told apart — auditing the pool sheet found ~8% of pools share the
+# same /48 as another pool but differ at the 4th hextet (e.g. a primary
+# pool vs its "_red_p" redundancy pair). At 3 segments those were
+# indistinguishable in this data; most pools are still /48-scoped in
+# practice (tools/pool_matcher.py handles both depths), but the handful
+# that specifically need /64 now resolve correctly too.
+# Bounds-safe: Spark's SPLIT drops trailing empty strings, so an address
+# like "2c0f:fc89::" yields a 2-element array and SPLIT(...)[3] would
+# throw "array index out of bounds" server-side without this guard (the
+# 3-segment version hit this exact issue on table 20652).
 _IPV6_PREFIX_SQL = (
-    "CASE WHEN SIZE(SPLIT(ms_ip_pa,':')) >= 3 "
+    "CASE WHEN SIZE(SPLIT(ms_ip_pa,':')) >= 4 "
+    "THEN CONCAT(SPLIT(ms_ip_pa,':')[0],':',SPLIT(ms_ip_pa,':')[1],':',"
+    "SPLIT(ms_ip_pa,':')[2],':',SPLIT(ms_ip_pa,':')[3]) "
+    "WHEN SIZE(SPLIT(ms_ip_pa,':')) >= 3 "
     "THEN CONCAT(SPLIT(ms_ip_pa,':')[0],':',SPLIT(ms_ip_pa,':')[1],':',SPLIT(ms_ip_pa,':')[2]) "
     "ELSE ms_ip_pa END"
 )
@@ -275,7 +303,9 @@ def _query(table: str, cutoff_ts: int, ip_family: str = "ipv6",
         WHERE timecolumn >= {cutoff_ts}
           {"AND timecolumn < " + str(end_ts) if end_ts is not None else ""}
           AND {ip_filter}
-          AND apn IN ('ETISALAT', 'INTERNET.ETISALAT')
+          AND apn IN ('ETISALAT', 'INTERNET.ETISALAT', 'ETISALAT.ROAMING',
+                       'INTERNET.ETISALAT.CC2', 'FWA.ETISALAT',
+                       'ETISALAT.ROAMING.VIP')
           AND ggsn_pgw_id IN ({GW_IDS_SQL})
         GROUP BY
             FROM_UNIXTIME(
@@ -455,6 +485,39 @@ def load_ip_csv(path: str) -> pd.DataFrame:
     agg["tcp_sr"]  = (agg["_sr_sum"]  / n).round(2)
     agg["tcp_fr2"] = (agg["_fr2_sum"] / n).round(2)
     return agg[["ugw", "prefix", "subscriber_ip", "sessions", "tcp_sr", "tcp_fr2"]]
+
+
+# ---------------------------------------------------------------------------
+# ClickHouse loading (primary source once tools/daily_update.py has been
+# run at least once — see tools/clickhouse_io.py for the writer side)
+# ---------------------------------------------------------------------------
+
+def load_subnet_from_clickhouse(lookback_days: int, ip_family: str) -> pd.DataFrame:
+    """Read one IP-family's subnet table (network_degradation_ipv6 /
+    network_degradation_ipv4), shaped like load_from_csv()'s output."""
+    table = f"network_degradation_{ip_family.lower()}"
+    df = _ch_read(table, days=lookback_days, date_column="report_date")
+    if df.empty:
+        return df
+    return _normalize_subnet_csv(df)
+
+
+def load_site_from_clickhouse(lookback_days: int) -> pd.DataFrame:
+    return _ch_read("network_degradation_site", days=lookback_days,
+                    date_column="report_date")
+
+
+def load_site_cells_from_clickhouse(lookback_days: int) -> pd.DataFrame:
+    # This table is the highest-cardinality one (hour x ugw x site x cell) —
+    # skip the FINAL merge-on-read outright rather than waste a query that's
+    # known to blow the per-query memory limit before falling back. Safe as
+    # long as no day was ever re-ingested into ClickHouse twice (see
+    # tools/clickhouse_io.py's read_last_n_days docstring).
+    df = _ch_read("network_degradation_site_cells", days=lookback_days,
+                  date_column="report_date", final=False)
+    if not df.empty:
+        df.columns = df.columns.str.strip('"').str.lower()
+    return df
 
 
 # ---------------------------------------------------------------------------
@@ -1252,7 +1315,7 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
     # Callbacks
     # ------------------------------------------------------------------
 
-    @callback(
+    @app.callback(
         Output("gw-filter",       "options"),
         Output("gw-filter",       "value"),
         Output("contrib-gw",      "options"),
@@ -1271,7 +1334,7 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
                 None,
                 _TAB_CAPTIONS.get(tab, ""))
 
-    @callback(
+    @app.callback(
         Output("subnet-selector", "value"),
         Input("family-tabs", "value"),
         Input({"type": "anom-item", "index": ALL}, "n_clicks"),
@@ -1287,7 +1350,7 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
             return tid["index"]
         return no_update
 
-    @callback(
+    @app.callback(
         Output("kpi-cards",        "children"),
         Output("subnet-list",      "children"),
         Output("subnet-selector",  "options"),
@@ -1411,7 +1474,7 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
 
         return cards, html.Div(items), _build_subnet_options(anom), label
 
-    @callback(
+    @app.callback(
         Output("compare-table-wrap",   "style"),
         Output("compare-table-toggle", "children"),
         Input("compare-table-toggle",  "n_clicks"),
@@ -1425,7 +1488,7 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
         return new_style, ("Show per-entity table" if currently_open
                            else "Hide per-entity table")
 
-    @callback(
+    @app.callback(
         Output("contrib-summary", "children"),
         Output("contrib-table",   "children"),
         Input("family-tabs",      "value"),
@@ -1489,7 +1552,7 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
         )
         return summary, table
 
-    @callback(
+    @app.callback(
         Output("download-report", "data"),
         Input("download-btn",     "n_clicks"),
         State("family-tabs",      "value"),
@@ -1558,7 +1621,7 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
         filename = f"tcp_kpi_{tab_tag}_{mode_tag}_{ts}.csv"
         return dcc.send_data_frame(report.to_csv, filename, index=False)
 
-    @callback(
+    @app.callback(
         Output("kpi-chart",      "figure"),
         Output("chart-title",    "children"),
         Output("ip-table",       "children"),
@@ -1713,7 +1776,7 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
 
         return fig, title, ip_content, panel_title
 
-    @callback(
+    @app.callback(
         Output("site-heatmap",       "figure"),
         Output("site-heatmap-panel", "style"),
         Input("family-tabs",         "value"),
@@ -1754,7 +1817,7 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
         )
         return fig, shown
 
-    @callback(
+    @app.callback(
         Output("compare-table-wrap", "children"),
         Input("family-tabs",         "value"),
         Input("compare-date",        "date"),
@@ -1809,7 +1872,7 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
             ),
         )
 
-    @callback(
+    @app.callback(
         Output("compare-chart",  "figure"),
         Input("family-tabs",     "value"),
         Input("compare-date",    "date"),
@@ -1968,9 +2031,6 @@ def load_and_build(args, url_base_pathname: str = "/"):
     running it standalone."""
     config = load_config()
 
-    csv_paths = [os.path.abspath(p) for p in args.csv] if args.csv else []
-    # Keep only paths that exist AND (if a folder) contain at least one .csv —
-    # an empty `data/` folder shouldn't block live-DB fallback.
     import glob as _glob
     def _has_data(p):
         if not os.path.exists(p):
@@ -1979,14 +2039,33 @@ def load_and_build(args, url_base_pathname: str = "/"):
             return True
         return bool(_glob.glob(os.path.join(p, "*.csv")))
 
-    usable = [p for p in csv_paths if _has_data(p)]
-    if usable:
-        print(f"Loading from CSV path(s): {usable}")
-        raw = load_from_csv(usable)
-    else:
-        if csv_paths:
-            print(f"  (No CSVs found in {csv_paths} — falling back to live DB)")
-        raw = load_from_db(config, args.lookback)
+    # 1) ClickHouse first (primary store once daily_update.py has run).
+    raw = pd.DataFrame()
+    if CLICKHOUSE_AVAILABLE:
+        try:
+            frames = [d for d in (
+                load_subnet_from_clickhouse(args.lookback, "ipv6"),
+                load_subnet_from_clickhouse(args.lookback, "ipv4"),
+            ) if not d.empty]
+            if frames:
+                raw = pd.concat(frames, ignore_index=True)
+                print(f"Loaded {len(raw):,} rows from ClickHouse "
+                      f"(last {args.lookback} days)")
+        except Exception as e:
+            print(f"  ClickHouse read failed ({e}) — falling back to CSV/DB")
+
+    # 2) CSV (offline / local testing), 3) live Hive DB — unchanged fallback
+    # chain, only reached when ClickHouse has no data yet.
+    if raw.empty:
+        csv_paths = [os.path.abspath(p) for p in args.csv] if args.csv else []
+        usable = [p for p in csv_paths if _has_data(p)]
+        if usable:
+            print(f"Loading from CSV path(s): {usable}")
+            raw = load_from_csv(usable)
+        else:
+            if csv_paths:
+                print(f"  (No CSVs found in {csv_paths} — falling back to live DB)")
+            raw = load_from_db(config, args.lookback)
 
     print(f"Loaded {len(raw):,} rows. Calculating peer baselines ...")
     subnet_df, ip_df = prepare(raw)
@@ -2012,39 +2091,63 @@ def load_and_build(args, url_base_pathname: str = "/"):
         if not part.empty:
             datasets[label] = part
 
-    # Site-level data (optional).
-    site_paths = args.site_csv
-    if site_paths is None:
-        default_site = os.path.abspath(os.path.join("data", "data_site"))
-        site_paths = [default_site] if _has_data(default_site) else []
-    if site_paths:
-        usable_site = [os.path.abspath(p) for p in site_paths if _has_data(p)]
-        if usable_site:
-            print(f"Loading site CSV path(s): {usable_site}")
-            site_raw = load_from_csv(usable_site)
-            site_df = prepare_sites(site_raw)
-            if not site_df.empty:
-                datasets["Sites"] = site_df
-                raw_datasets["Sites"] = site_raw
-                print(f"  -> {len(site_df):,} site rows, "
-                      f"{site_df['prefix'].nunique()} sites")
+    # Site-level data (optional). ClickHouse first, then CSV fallback.
+    site_raw = pd.DataFrame()
+    if CLICKHOUSE_AVAILABLE:
+        try:
+            site_raw = load_site_from_clickhouse(args.lookback)
+            if not site_raw.empty:
+                print(f"Loaded {len(site_raw):,} site rows from ClickHouse")
+        except Exception as e:
+            print(f"  ClickHouse site read failed ({e}) — falling back to CSV")
 
-    # Cell-level drill-down data (optional, Sites tab only).
+    if site_raw.empty:
+        site_paths = args.site_csv
+        if site_paths is None:
+            default_site = os.path.abspath(os.path.join("data", "data_site"))
+            site_paths = [default_site] if _has_data(default_site) else []
+        if site_paths:
+            usable_site = [os.path.abspath(p) for p in site_paths if _has_data(p)]
+            if usable_site:
+                print(f"Loading site CSV path(s): {usable_site}")
+                site_raw = load_from_csv(usable_site)
+
+    if not site_raw.empty:
+        site_df = prepare_sites(site_raw)
+        if not site_df.empty:
+            datasets["Sites"] = site_df
+            raw_datasets["Sites"] = site_raw
+            print(f"  -> {len(site_df):,} site rows, "
+                  f"{site_df['prefix'].nunique()} sites")
+
+    # Cell-level drill-down data (optional, Sites tab only). ClickHouse
+    # first, then CSV fallback.
     cells_df = pd.DataFrame()
-    cells_paths = args.cells_csv
-    if cells_paths is None:
-        default_cells = os.path.abspath(os.path.join("data", "data_site_cells"))
-        cells_paths = [default_cells] if _has_data(default_cells) else []
-    if cells_paths:
-        usable_cells = [os.path.abspath(p) for p in cells_paths if _has_data(p)]
-        if usable_cells:
-            print(f"Loading cell CSV path(s): {usable_cells}")
-            cells_df = load_from_csv(usable_cells)
-            cells_df.columns = cells_df.columns.str.strip('"').str.lower()
-            for c in ("session_count", "tcp_2_fr", "tcp_3_fr"):
-                cells_df[c] = pd.to_numeric(cells_df[c], errors="coerce")
-            print(f"  -> {len(cells_df):,} cell rows, "
-                  f"{cells_df['cell_name'].nunique()} cells")
+    if CLICKHOUSE_AVAILABLE:
+        try:
+            cells_df = load_site_cells_from_clickhouse(args.lookback)
+            if not cells_df.empty:
+                print(f"Loaded {len(cells_df):,} cell rows from ClickHouse")
+        except Exception as e:
+            print(f"  ClickHouse cell read failed ({e}) — falling back to CSV")
+
+    if cells_df.empty:
+        cells_paths = args.cells_csv
+        if cells_paths is None:
+            default_cells = os.path.abspath(os.path.join("data", "data_site_cells"))
+            cells_paths = [default_cells] if _has_data(default_cells) else []
+        if cells_paths:
+            usable_cells = [os.path.abspath(p) for p in cells_paths if _has_data(p)]
+            if usable_cells:
+                print(f"Loading cell CSV path(s): {usable_cells}")
+                cells_df = load_from_csv(usable_cells)
+                cells_df.columns = cells_df.columns.str.strip('"').str.lower()
+
+    if not cells_df.empty:
+        for c in ("session_count", "tcp_2_fr", "tcp_3_fr"):
+            cells_df[c] = pd.to_numeric(cells_df[c], errors="coerce")
+        print(f"  -> {len(cells_df):,} cell rows, "
+              f"{cells_df['cell_name'].nunique()} cells")
 
     if not datasets:
         raise SystemExit("No usable data after preparation "

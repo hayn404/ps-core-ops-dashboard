@@ -28,3 +28,6 @@ thrift_sasl
 pure-sasl
 sasl
 kerberos
+
+# ClickHouse ingestion/reads (tools/clickhouse_io.py, shared by both use cases)
+clickhouse-connect

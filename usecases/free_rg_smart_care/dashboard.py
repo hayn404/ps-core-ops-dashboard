@@ -25,13 +25,30 @@ from datetime import datetime, timedelta
 import pandas as pd
 import plotly.graph_objects as go
 import yaml
-from dash import Dash, Input, Output, State, callback, ctx, dash_table, dcc, html, no_update
+from dash import Dash, Input, Output, State, ctx, dash_table, dcc, html, no_update
 
 warnings.filterwarnings("ignore")
 
 CONFIG_PATH = os.environ.get(
     "FREE_RG_CONFIG",
     os.path.join(os.path.dirname(__file__), "config", "config.yaml"))
+
+# Top-level ps-core-ops-dashboard/tools/ holds the shared ClickHouse reader
+# used by every use case (three levels up: dashboard.py -> free_rg_smart_care
+# -> usecases -> repo root).
+import sys as _sys
+_TOP_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_TOP_TOOLS = os.path.join(_TOP_REPO_ROOT, "tools")
+if _TOP_TOOLS not in _sys.path:
+    _sys.path.insert(0, _TOP_TOOLS)
+try:
+    from clickhouse_io import read_last_n_days as _ch_read
+    CLICKHOUSE_AVAILABLE = True
+except Exception:
+    _ch_read = None
+    CLICKHOUSE_AVAILABLE = False
+
+CH_TABLE = "free_rg_smart_care_daily"
 
 # ---------------------------------------------------------------------------
 # Config
@@ -453,6 +470,15 @@ def load_all_data(data_root: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFr
     users = _merge_frames(users_new, users_legacy)
     top_users = _merge_frames(top_users_new, top_users_legacy, extra_keys=["imsi"])
     return traffic, users, top_users
+
+
+def load_daily_from_clickhouse(lookback_days: int) -> pd.DataFrame:
+    """Read the combined daily export from ClickHouse — the primary source
+    once tools/daily_update.py has run at least once (see
+    tools/clickhouse_io.py for the writer side). Feed the result straight
+    into split_daily(), same as a freshly-queried live-DB frame."""
+    df = _ch_read(CH_TABLE, days=lookback_days, date_column="myday")
+    return df
 
 
 # ---------------------------------------------------------------------------
@@ -887,7 +913,7 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
     # Callbacks
     # ------------------------------------------------------------------
 
-    @callback(
+    @app.callback(
         Output("kpi-cards", "children"),
         Output("traffic-chart", "figure"),
         Output("users-chart", "figure"),
@@ -1254,7 +1280,7 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
         return (cards, fig_traffic, fig_users, fig_traffic_dod, fig_users_dod,
                 fig_pie, fig_cap, fig_viol, summary, top_table, repeat_table)
 
-    @callback(
+    @app.callback(
         Output("compare-chart", "figure"),
         Input("compare-date", "date"),
         Input("rg-filter", "value"),
@@ -1308,7 +1334,7 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
         )
         return fig
 
-    @callback(
+    @app.callback(
         Output("download-report", "data"),
         Input("download-btn", "n_clicks"),
         State("rg-filter", "value"),
@@ -1349,8 +1375,6 @@ def load_and_build(args, url_base_pathname: str = "/"):
     apn_filter = [a.strip() for a in apn_raw.split(",") if a.strip()] if apn_raw else []
     msisdn_col = config.get("msisdn_column", "MSISDN")
 
-    data_root = os.path.abspath(args.csv)
-
     import glob as _glob
     def _has_data(p):
         if not os.path.exists(p):
@@ -1359,14 +1383,30 @@ def load_and_build(args, url_base_pathname: str = "/"):
             return True
         return bool(_glob.glob(os.path.join(p, "*.csv")))
 
-    has_csv = any(_has_data(os.path.join(data_root, d)) for d in
-                  ("free_rg_daily", "free_rg_traffic",
-                   "free_rg_users", "free_rg_top_users"))
+    # 1) ClickHouse first (primary store once daily_update.py has run).
+    traffic_df = users_df = top_users_df = pd.DataFrame()
+    if CLICKHOUSE_AVAILABLE:
+        try:
+            daily_ch = load_daily_from_clickhouse(args.lookback)
+            if not daily_ch.empty:
+                traffic_df, users_df, top_users_df = split_daily(daily_ch)
+                print(f"Loaded {len(daily_ch):,} rows from ClickHouse "
+                      f"(last {args.lookback} days)")
+        except Exception as e:
+            print(f"  ClickHouse read failed ({e}) — falling back to CSV/DB")
+
+    # 2) CSV (offline / local testing), 3) live Hive DB — unchanged fallback
+    # chain, only reached when ClickHouse has no data yet.
+    data_root = os.path.abspath(args.csv)
+    has_csv = (traffic_df.empty and users_df.empty and top_users_df.empty and
+               any(_has_data(os.path.join(data_root, d)) for d in
+                   ("free_rg_daily", "free_rg_traffic",
+                    "free_rg_users", "free_rg_top_users")))
 
     if has_csv:
         print(f"Loading from CSV folders under: {data_root}")
         traffic_df, users_df, top_users_df = load_all_data(data_root)
-    else:
+    elif traffic_df.empty and users_df.empty and top_users_df.empty:
         print(f"No CSVs found under {data_root} — falling back to live DB")
         # Live DB loading: discover tables, one scan per table for lookback period
         conn = connect_db(config)

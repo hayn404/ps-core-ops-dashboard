@@ -1,0 +1,225 @@
+======================================================================
+daily_update run at 2026-09-12 16:07:10 (jobs=['ipv6', 'ipv4', 'site', 'site_cells'], dry_run=False, check=False)
+[ipv6] discovering tables (sdr_dyn_ide_soc_tcp_user_15m_%) ...
+[ipv6] backfill mode — considering newest 10 table(s) (existing CSVs are skipped)
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20699: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20700: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20701: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20702: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20703: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20704: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20705: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20706: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20708: holds 2026-09-11 but is still the current (partial) day — skipped, will export tomorrow
+[ipv4] discovering tables (sdr_dyn_ide_soc_tcp_user_15m_%) ...
+[ipv4] backfill mode — considering newest 10 table(s) (existing CSVs are skipped)
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20699: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20700: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20701: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20702: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20703: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20704: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20705: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20706: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20708: holds 2026-09-11 but is still the current (partial) day — skipped, will export tomorrow
+[site] discovering tables (SDR_DYN_IDE_SOC_TCP_CELL_USER_15m_%) ...
+[site] backfill mode — considering newest 10 table(s) (existing CSVs are skipped)
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20699: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20700: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20701: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20702: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20703: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20704: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20705: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20706: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20707: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20708: holds 2026-09-11 but is still the current (partial) day — skipped, will export tomorrow
+[site_cells] discovering tables (SDR_DYN_IDE_SOC_TCP_CELL_USER_15m_%) ...
+[site_cells] backfill mode — considering newest 10 table(s) (existing CSVs are skipped)
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20699: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20700: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20701: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20702: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20703: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20704: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20705: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20706: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20707: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20708: holds 2026-09-11 but is still the current (partial) day — skipped, will export tomorrow
+state saved: {'ipv6': 20707, 'ipv4': 20707, 'site': 20707, 'site_cells': 20707}
+run finished
+======================================================================
+daily_update run at 2026-09-12 16:09:29 (jobs=['ipv6', 'ipv4', 'site', 'site_cells'], dry_run=False, check=False)
+[ipv6] discovering tables (sdr_dyn_ide_soc_tcp_user_15m_%) ...
+[ipv6] backfill mode — considering newest 10 table(s) (existing CSVs are skipped)
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20708: holds 2026-09-11 but is still the current (partial) day — skipped, will export tomorrow
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20699 (2026-09-02): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20699 (2026-09-02): wrote 13,847 rows -> sdr_dyn_ide_soc_tcp_user_15m_20699.csv | exec 55.2s (server), fetch 0.4s (34,618 rows/s), write 0.0s
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20699 (2026-09-02): wrote 13,847 rows -> ClickHouse `network_degradation_ipv6` (0.1s)
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20700 (2026-09-03): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20700 (2026-09-03): wrote 13,788 rows -> sdr_dyn_ide_soc_tcp_user_15m_20700.csv | exec 42.1s (server), fetch 0.3s (45,960 rows/s), write 0.0s
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20700 (2026-09-03): wrote 13,788 rows -> ClickHouse `network_degradation_ipv6` (0.1s)
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20701 (2026-09-04): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20701 (2026-09-04): wrote 13,878 rows -> sdr_dyn_ide_soc_tcp_user_15m_20701.csv | exec 38.8s (server), fetch 0.4s (34,695 rows/s), write 0.0s
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20701 (2026-09-04): wrote 13,878 rows -> ClickHouse `network_degradation_ipv6` (0.1s)
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20702 (2026-09-05): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20702 (2026-09-05): wrote 13,819 rows -> sdr_dyn_ide_soc_tcp_user_15m_20702.csv | exec 47.0s (server), fetch 0.4s (34,548 rows/s), write 0.0s
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20702 (2026-09-05): wrote 13,819 rows -> ClickHouse `network_degradation_ipv6` (0.1s)
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20703 (2026-09-06): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20703 (2026-09-06): wrote 13,702 rows -> sdr_dyn_ide_soc_tcp_user_15m_20703.csv | exec 48.7s (server), fetch 1.0s (13,702 rows/s), write 0.0s
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20703 (2026-09-06): wrote 13,702 rows -> ClickHouse `network_degradation_ipv6` (0.1s)
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20704 (2026-09-07): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20704 (2026-09-07): wrote 13,770 rows -> sdr_dyn_ide_soc_tcp_user_15m_20704.csv | exec 93.8s (server), fetch 0.9s (15,300 rows/s), write 0.0s
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20704 (2026-09-07): wrote 13,770 rows -> ClickHouse `network_degradation_ipv6` (0.1s)
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20705 (2026-09-08): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20705 (2026-09-08): wrote 13,813 rows -> sdr_dyn_ide_soc_tcp_user_15m_20705.csv | exec 65.3s (server), fetch 0.4s (34,532 rows/s), write 0.0s
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20705 (2026-09-08): wrote 13,813 rows -> ClickHouse `network_degradation_ipv6` (0.1s)
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20706 (2026-09-09): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20706 (2026-09-09): wrote 13,796 rows -> sdr_dyn_ide_soc_tcp_user_15m_20706.csv | exec 49.1s (server), fetch 0.8s (17,245 rows/s), write 0.0s
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20706 (2026-09-09): wrote 13,796 rows -> ClickHouse `network_degradation_ipv6` (0.1s)
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707 (2026-09-10): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707 (2026-09-10): wrote 13,748 rows -> sdr_dyn_ide_soc_tcp_user_15m_20707.csv | exec 106.5s (server), fetch 0.3s (45,827 rows/s), write 0.0s
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707 (2026-09-10): wrote 13,748 rows -> ClickHouse `network_degradation_ipv6` (0.1s)
+[ipv4] discovering tables (sdr_dyn_ide_soc_tcp_user_15m_%) ...
+[ipv4] backfill mode — considering newest 10 table(s) (existing CSVs are skipped)
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20708: holds 2026-09-11 but is still the current (partial) day — skipped, will export tomorrow
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20699 (2026-09-02): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20699 (2026-09-02): wrote 1,621,983 rows -> sdr_dyn_ide_soc_tcp_user_15m_20699.csv | exec 171.3s (server), fetch 42.4s (38,254 rows/s), write 5.2s
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20699 (2026-09-02): wrote 1,621,983 rows -> ClickHouse `network_degradation_ipv4` (8.2s)
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20700 (2026-09-03): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20700 (2026-09-03): wrote 1,614,050 rows -> sdr_dyn_ide_soc_tcp_user_15m_20700.csv | exec 98.1s (server), fetch 40.7s (39,657 rows/s), write 5.2s
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20700 (2026-09-03): wrote 1,614,050 rows -> ClickHouse `network_degradation_ipv4` (7.8s)
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20701 (2026-09-04): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20701 (2026-09-04): wrote 1,662,233 rows -> sdr_dyn_ide_soc_tcp_user_15m_20701.csv | exec 229.9s (server), fetch 45.9s (36,214 rows/s), write 5.2s
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20701 (2026-09-04): wrote 1,662,233 rows -> ClickHouse `network_degradation_ipv4` (8.3s)
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20702 (2026-09-05): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20702 (2026-09-05): wrote 1,661,186 rows -> sdr_dyn_ide_soc_tcp_user_15m_20702.csv | exec 157.8s (server), fetch 45.2s (36,752 rows/s), write 5.3s
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20702 (2026-09-05): wrote 1,661,186 rows -> ClickHouse `network_degradation_ipv4` (8.3s)
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20703 (2026-09-06): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20703 (2026-09-06): wrote 1,621,406 rows -> sdr_dyn_ide_soc_tcp_user_15m_20703.csv | exec 76.7s (server), fetch 41.3s (39,259 rows/s), write 5.2s
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20703 (2026-09-06): wrote 1,621,406 rows -> ClickHouse `network_degradation_ipv4` (8.0s)
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20704 (2026-09-07): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20704 (2026-09-07): wrote 1,609,112 rows -> sdr_dyn_ide_soc_tcp_user_15m_20704.csv | exec 59.9s (server), fetch 40.0s (40,228 rows/s), write 5.2s
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20704 (2026-09-07): wrote 1,609,112 rows -> ClickHouse `network_degradation_ipv4` (8.3s)
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20705 (2026-09-08): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20705 (2026-09-08): wrote 1,613,089 rows -> sdr_dyn_ide_soc_tcp_user_15m_20705.csv | exec 56.0s (server), fetch 42.3s (38,134 rows/s), write 5.1s
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20705 (2026-09-08): wrote 1,613,089 rows -> ClickHouse `network_degradation_ipv4` (8.4s)
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20706 (2026-09-09): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20706 (2026-09-09): wrote 1,613,937 rows -> sdr_dyn_ide_soc_tcp_user_15m_20706.csv | exec 74.6s (server), fetch 47.8s (33,764 rows/s), write 5.1s
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20706 (2026-09-09): wrote 1,613,937 rows -> ClickHouse `network_degradation_ipv4` (8.2s)
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707 (2026-09-10): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707 (2026-09-10): wrote 1,600,077 rows -> sdr_dyn_ide_soc_tcp_user_15m_20707.csv | exec 53.2s (server), fetch 44.3s (36,119 rows/s), write 5.2s
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707 (2026-09-10): wrote 1,600,077 rows -> ClickHouse `network_degradation_ipv4` (8.1s)
+[site] discovering tables (SDR_DYN_IDE_SOC_TCP_CELL_USER_15m_%) ...
+[site] backfill mode — considering newest 10 table(s) (existing CSVs are skipped)
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20708: holds 2026-09-11 but is still the current (partial) day — skipped, will export tomorrow
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20699 (2026-09-02): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20699 (2026-09-02): wrote 3,153,669 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20699.csv | exec 48.8s (server), fetch 82.7s (38,134 rows/s), write 6.0s
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20699 (2026-09-02): wrote 3,153,669 rows -> ClickHouse `network_degradation_site` (18.0s)
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20700 (2026-09-03): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20700 (2026-09-03): wrote 3,115,731 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20700.csv | exec 36.3s (server), fetch 81.0s (38,466 rows/s), write 5.9s
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20700 (2026-09-03): wrote 3,115,731 rows -> ClickHouse `network_degradation_site` (17.5s)
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20701 (2026-09-04): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20701 (2026-09-04): wrote 3,204,045 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20701.csv | exec 36.0s (server), fetch 81.6s (39,265 rows/s), write 6.1s
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20701 (2026-09-04): wrote 3,204,045 rows -> ClickHouse `network_degradation_site` (16.6s)
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20702 (2026-09-05): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20702 (2026-09-05): wrote 3,203,780 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20702.csv | exec 52.8s (server), fetch 109.3s (29,312 rows/s), write 6.2s
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20702 (2026-09-05): wrote 3,203,780 rows -> ClickHouse `network_degradation_site` (18.3s)
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20703 (2026-09-06): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20703 (2026-09-06): wrote 3,173,685 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20703.csv | exec 40.4s (server), fetch 93.8s (33,835 rows/s), write 6.1s
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20703 (2026-09-06): wrote 3,173,685 rows -> ClickHouse `network_degradation_site` (18.8s)
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20704 (2026-09-07): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20704 (2026-09-07): wrote 3,155,456 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20704.csv | exec 24.2s (server), fetch 80.9s (39,004 rows/s), write 6.1s
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20704 (2026-09-07): wrote 3,155,456 rows -> ClickHouse `network_degradation_site` (17.1s)
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20705 (2026-09-08): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20705 (2026-09-08): wrote 3,143,082 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20705.csv | exec 24.9s (server), fetch 83.6s (37,597 rows/s), write 6.0s
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20705 (2026-09-08): wrote 3,143,082 rows -> ClickHouse `network_degradation_site` (18.3s)
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20706 (2026-09-09): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20706 (2026-09-09): wrote 3,141,714 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20706.csv | exec 46.8s (server), fetch 71.0s (44,249 rows/s), write 6.2s
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20706 (2026-09-09): wrote 3,141,714 rows -> ClickHouse `network_degradation_site` (18.3s)
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20707 (2026-09-10): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20707 (2026-09-10): wrote 3,089,708 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20707.csv | exec 21.9s (server), fetch 79.7s (38,767 rows/s), write 5.9s
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20707 (2026-09-10): wrote 3,089,708 rows -> ClickHouse `network_degradation_site` (18.5s)
+[site_cells] discovering tables (SDR_DYN_IDE_SOC_TCP_CELL_USER_15m_%) ...
+[site_cells] backfill mode — considering newest 10 table(s) (existing CSVs are skipped)
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20708: holds 2026-09-11 but is still the current (partial) day — skipped, will export tomorrow
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20699 (2026-09-02): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20699 (2026-09-02): wrote 17,212,218 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20699.csv | exec 85.7s (server), fetch 625.4s (27,522 rows/s), write 47.2s
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20699 (2026-09-02): wrote 17,212,218 rows -> ClickHouse `network_degradation_site_cells` (170.1s)
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20700 (2026-09-03): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20700 (2026-09-03): wrote 16,640,187 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20700.csv | exec 51.4s (server), fetch 613.2s (27,137 rows/s), write 46.9s
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20700 (2026-09-03): wrote 16,640,187 rows -> ClickHouse `network_degradation_site_cells` (173.1s)
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20701 (2026-09-04): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20701 (2026-09-04): wrote 17,520,672 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20701.csv | exec 66.1s (server), fetch 570.6s (30,706 rows/s), write 46.4s
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20701 (2026-09-04): wrote 17,520,672 rows -> ClickHouse `network_degradation_site_cells` (170.8s)
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20702 (2026-09-05): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20702 (2026-09-05): wrote 17,518,924 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20702.csv | exec 61.7s (server), fetch 952.4s (18,395 rows/s), write 50.5s
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20702 (2026-09-05): wrote 17,518,924 rows -> ClickHouse `network_degradation_site_cells` (197.4s)
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20703 (2026-09-06): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20703 (2026-09-06): wrote 17,077,631 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20703.csv | exec 87.8s (server), fetch 632.3s (27,009 rows/s), write 45.3s
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20703 (2026-09-06): wrote 17,077,631 rows -> ClickHouse `network_degradation_site_cells` (177.8s)
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20704 (2026-09-07): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20704 (2026-09-07): wrote 16,883,494 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20704.csv | exec 46.4s (server), fetch 606.6s (27,833 rows/s), write 45.0s
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20704 (2026-09-07): wrote 16,883,494 rows -> ClickHouse `network_degradation_site_cells` (165.1s)
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20705 (2026-09-08): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20705 (2026-09-08): wrote 17,046,017 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20705.csv | exec 73.1s (server), fetch 632.6s (26,946 rows/s), write 45.8s
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20705 (2026-09-08): wrote 17,046,017 rows -> ClickHouse `network_degradation_site_cells` (160.8s)
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20706 (2026-09-09): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20706 (2026-09-09): wrote 17,362,822 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20706.csv | exec 85.9s (server), fetch 629.2s (27,595 rows/s), write 46.4s
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20706 (2026-09-09): wrote 17,362,822 rows -> ClickHouse `network_degradation_site_cells` (173.5s)
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20707 (2026-09-10): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20707 (2026-09-10): wrote 16,807,662 rows -> sdr_dyn_ide_soc_tcp_cell_user_15m_20707.csv | exec 51.7s (server), fetch 557.1s (30,170 rows/s), write 45.6s
+======================================================================
+daily_update run at 2026-09-12 22:32:08 (jobs=['ipv6', 'ipv4', 'site', 'site_cells'], dry_run=False, check=False)
+[ipv6] discovering tables (sdr_dyn_ide_soc_tcp_user_15m_%) ...
+[ipv6] backfill mode — considering newest 10 table(s) (existing CSVs are skipped)
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20699: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20700: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20701: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20702: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20703: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20704: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20705: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20706: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707: CSV already exists — marking done
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20708: holds 2026-09-11 but is still the current (partial) day — skipped, will export tomorrow
+[ipv4] discovering tables (sdr_dyn_ide_soc_tcp_user_15m_%) ...
+[ipv4] backfill mode — considering newest 10 table(s) (existing CSVs are skipped)
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20699: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20700: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20701: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20702: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20703: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20704: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20705: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20706: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707: CSV already exists — marking done
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20708: holds 2026-09-11 but is still the current (partial) day — skipped, will export tomorrow
+[site] discovering tables (SDR_DYN_IDE_SOC_TCP_CELL_USER_15m_%) ...
+[site] backfill mode — considering newest 10 table(s) (existing CSVs are skipped)
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20699: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20700: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20701: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20702: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20703: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20704: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20705: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20706: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20707: CSV already exists — marking done
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20708: holds 2026-09-11 but is still the current (partial) day — skipped, will export tomorrow
+[site_cells] discovering tables (SDR_DYN_IDE_SOC_TCP_CELL_USER_15m_%) ...
+[site_cells] backfill mode — considering newest 10 table(s) (existing CSVs are skipped)
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20699: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20700: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20701: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20702: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20703: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20704: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20705: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20706: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20707: CSV already exists — marking done
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20708: holds 2026-09-11 but is still the current (partial) day — skipped, will export tomorrow
+state saved: {'ipv4': 20707, 'ipv6': 20707, 'site': 20707, 'site_cells': 20707}
+run finished

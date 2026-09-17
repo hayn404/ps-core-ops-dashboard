@@ -45,6 +45,24 @@ if REPO_ROOT not in sys.path:
 
 from dashboard import connect_db, discover_tables, daily_query, load_config
 
+# Top-level ps-core-ops-dashboard/tools/ holds the shared ClickHouse writer
+# used by every use case.
+_TOP_REPO_ROOT = os.path.dirname(os.path.dirname(REPO_ROOT))
+_TOP_TOOLS = os.path.join(_TOP_REPO_ROOT, "tools")
+if _TOP_TOOLS not in sys.path:
+    sys.path.insert(0, _TOP_TOOLS)
+try:
+    from clickhouse_io import write_dataframe as _ch_write
+    CLICKHOUSE_ENABLED = True
+except Exception as _ch_import_err:  # ClickHouse optional — CSV still works
+    _ch_write = None
+    CLICKHOUSE_ENABLED = False
+    print(f"[clickhouse_io] not available ({_ch_import_err}) — "
+          f"CSV-only mode for this run.")
+
+CH_TABLE = "free_rg_smart_care_daily"
+CH_ORDER_BY = ["myday", "rg_id", "apn", "rnk"]
+
 STATE_PATH = os.path.join(REPO_ROOT, "tools", ".daily_update_state.json")
 LOG_PATH = os.path.join(REPO_ROOT, "tools", "daily_update.log")
 
@@ -95,42 +113,95 @@ def log_exception(e: Exception) -> None:
 # ---------------------------------------------------------------------------
 
 def _read_export(sql: str, conn, fetch_size: int = FETCH_SIZE) -> "tuple[pd.DataFrame, dict]":
-    """Execute an export query with a bounded JDBC fetch size.
+    """Execute an export query and time server vs. client phases.
 
-    Rows are read as strings, then numeric columns are converted
-    vectorized in pandas afterwards.
+    Supports both connection types this project uses:
+      - JDBC (JayDeBeApi, local/Windows dev, config.yaml mode: "jdbc"):
+        uses the raw java statement with a manual setFetchSize() to work
+        around that driver's fetch-size corruption bug.
+      - SASL/thrift (pyhive, this Linux server, config.server.yaml
+        mode: "sasl"): plain DB-API cursor — conn has no .jconn attribute
+        in this mode, which is what selects this path.
+
+    Returns (dataframe, timings) where timings splits server-side compute
+    (exec_s: until the query returns) from client-side transmission
+    (fetch_s: pulling the rows) — that split tells you whether slowness is
+    the query or the network.
     """
-    stmt = conn.jconn.createStatement()
-    try:
-        stmt.setFetchSize(fetch_size)
-        t0 = time.monotonic()
-        rs = stmt.executeQuery(sql)
-        timings = {"exec_s": round(time.monotonic() - t0, 1)}
-
-        t1 = time.monotonic()
-        md = rs.getMetaData()
-        ncols = md.getColumnCount()
-        cols = [str(md.getColumnName(i)).split(".")[-1]
-                for i in range(1, ncols + 1)]
-        rows = []
-        while rs.next():
-            rows.append(tuple(rs.getString(i) for i in range(1, ncols + 1)))
-        rs.close()
-        timings["fetch_s"] = round(time.monotonic() - t1, 1)
-        timings["rows"] = len(rows)
-
-        df = pd.DataFrame.from_records(rows, columns=cols)
-        for c in df.columns:
-            try:
-                df[c] = pd.to_numeric(df[c])
-            except (ValueError, TypeError):
-                pass
-        return df, timings
-    finally:
+    if hasattr(conn, "jconn"):
+        stmt = conn.jconn.createStatement()
         try:
-            stmt.close()
-        except Exception:
-            pass
+            stmt.setFetchSize(fetch_size)
+            t0 = time.monotonic()
+            rs = stmt.executeQuery(sql)
+            timings = {"exec_s": round(time.monotonic() - t0, 1)}
+
+            t1 = time.monotonic()
+            md = rs.getMetaData()
+            ncols = md.getColumnCount()
+            cols = [str(md.getColumnName(i)).split(".")[-1]
+                    for i in range(1, ncols + 1)]
+            rows = []
+            while rs.next():
+                rows.append(tuple(rs.getString(i) for i in range(1, ncols + 1)))
+            rs.close()
+            timings["fetch_s"] = round(time.monotonic() - t1, 1)
+            timings["rows"] = len(rows)
+
+            df = pd.DataFrame.from_records(rows, columns=cols)
+            for c in df.columns:
+                try:
+                    df[c] = pd.to_numeric(df[c])
+                except (ValueError, TypeError):
+                    pass
+            return df, timings
+        finally:
+            try:
+                stmt.close()
+            except Exception:
+                pass
+    else:
+        # SASL/thrift (pyhive) connection — no raw Java statement handle,
+        # use the standard DB-API cursor instead (same approach already
+        # used successfully by network_degradation/tools/daily_update.py).
+        cur = conn.cursor()
+        try:
+            # Best-effort mitigation for SparkOutOfMemoryError during the
+            # daily_query() window function (ROW_NUMBER() OVER PARTITION BY
+            # myday, rg_id) on days with a skewed/very large rating group:
+            # more shuffle partitions means less data sorted per executor
+            # task. Session-scoped SET, safe to no-op if unsupported/denied.
+            shuffle_partitions = os.environ.get("FREE_RG_SHUFFLE_PARTITIONS")
+            if shuffle_partitions:
+                try:
+                    cur.execute(f"SET spark.sql.shuffle.partitions={int(shuffle_partitions)}")
+                except Exception as e:
+                    log(f"  (could not set spark.sql.shuffle.partitions, "
+                        f"continuing with cluster default: {e})")
+
+            cur.arraysize = fetch_size
+            t0 = time.monotonic()
+            cur.execute(sql)
+            timings = {"exec_s": round(time.monotonic() - t0, 1)}
+
+            t1 = time.monotonic()
+            rows = cur.fetchall()
+            cols = [d[0].split(".")[-1] for d in cur.description]
+            timings["fetch_s"] = round(time.monotonic() - t1, 1)
+            timings["rows"] = len(rows)
+
+            df = pd.DataFrame.from_records(rows, columns=cols)
+            for c in df.columns:
+                try:
+                    df[c] = pd.to_numeric(df[c])
+                except (ValueError, TypeError):
+                    pass
+            return df, timings
+        finally:
+            try:
+                cur.close()
+            except Exception:
+                pass
 
 
 def _probe_day(table: str, conn):
@@ -297,6 +368,25 @@ def export_job(job_name: str, job: dict, conn_box: list, schema: str,
             f"-> {os.path.basename(csv_path)} | "
             f"exec {t['exec_s']}s (server), fetch {t['fetch_s']}s "
             f"({rate:,} rows/s), write {write_s}s")
+
+        if CLICKHOUSE_ENABLED:
+            try:
+                ch_df = df.copy()
+                ch_df.columns = ch_df.columns.str.lower()
+                # myday comes back as 'yyyy/MM/dd' text — parse to a real
+                # date so PARTITION BY / ORDER BY / TTL work in ClickHouse.
+                ch_df["myday"] = pd.to_datetime(
+                    ch_df["myday"], format="%Y/%m/%d", errors="coerce")
+                t_ch = time.monotonic()
+                n = _ch_write(ch_df, table=CH_TABLE, date_column="myday",
+                               order_by=CH_ORDER_BY)
+                log(f"[{job_name}] {table} ({day_str}): wrote {n:,} rows "
+                    f"-> ClickHouse `{CH_TABLE}` "
+                    f"({round(time.monotonic() - t_ch, 1)}s)")
+            except Exception as e:
+                log(f"[{job_name}] {table}: ClickHouse write FAILED "
+                    f"(CSV still saved, will NOT auto-retry this day): {e}")
+
         if last_done is None or number > last_done:
             state[job_name] = number
             last_done = number

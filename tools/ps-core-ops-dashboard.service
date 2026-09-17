@@ -30,6 +30,10 @@ Group=ossuser
 # If Hive auth needs a Kerberos ticket cache set up outside this unit
 # (e.g. renewed by cron via kinit -kt), point at the same cache here:
 # Environment=KRB5CCNAME=FILE:/tmp/krb5cc_ps_core_ops
+# ClickHouse defaults (127.0.0.1:8123, database ps_core_ops) match this
+# server's setup already — only uncomment if yours differs:
+# Environment=CLICKHOUSE_HOST=127.0.0.1
+# Environment=CLICKHOUSE_DATABASE=ps_core_ops
 StandardOutput=append:/path/to/ps-core-ops-dashboard/hub.log
 StandardError=append:/path/to/ps-core-ops-dashboard/hub.log
 

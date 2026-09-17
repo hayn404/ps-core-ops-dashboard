@@ -42,6 +42,37 @@ if REPO_ROOT not in sys.path:
 
 from dashboard import connect_db, discover_tables, _query, _GW_CASE_SQL  # noqa: E402
 
+# Top-level ps-core-ops-dashboard/tools/ (two levels up from this usecase's
+# own tools/) holds the shared ClickHouse writer used by every use case.
+_TOP_REPO_ROOT = os.path.dirname(os.path.dirname(REPO_ROOT))
+_TOP_TOOLS = os.path.join(_TOP_REPO_ROOT, "tools")
+if _TOP_TOOLS not in sys.path:
+    sys.path.insert(0, _TOP_TOOLS)
+try:
+    from clickhouse_io import write_dataframe as _ch_write
+    CLICKHOUSE_ENABLED = True
+except Exception as _ch_import_err:  # ClickHouse optional — CSV still works
+    _ch_write = None
+    CLICKHOUSE_ENABLED = False
+    print(f"[clickhouse_io] not available ({_ch_import_err}) — "
+          f"CSV-only mode for this run.")
+
+# ORDER BY key per job — used when a ClickHouse table is first created.
+#
+# CRITICAL: ReplacingMergeTree treats this as the DEDUP key — any two rows
+# sharing every one of these column values collapse into one when queried
+# with FINAL (which tools/clickhouse_io.py's reader always uses). It must
+# therefore include enough columns to make every real row unique, or a
+# FINAL read silently discards almost the entire day's data. Each job's
+# export has one row per (hour, ugw, <entity>) — all four columns are
+# required, not just report_date/ugw.
+_CH_ORDER_BY = {
+    "ipv6": ["report_date", "hour", "ugw", "ipv6_prefix_48"],
+    "ipv4": ["report_date", "hour", "ugw", "ipv4_prefix_24"],
+    "site": ["report_date", "hour", "ugw", "site"],
+    "site_cells": ["report_date", "hour", "ugw", "site", "cell_name"],
+}
+
 STATE_PATH = os.path.join(REPO_ROOT, "tools", ".daily_update_state.json")
 LOG_PATH = os.path.join(REPO_ROOT, "tools", "daily_update.log")
 
@@ -448,6 +479,24 @@ def export_job(job_name: str, job: dict, conn_box: list, schema: str,
             f"-> {os.path.basename(csv_path)} | "
             f"exec {t['exec_s']}s (server), fetch {t['fetch_s']}s "
             f"({rate:,} rows/s), write {write_s}s")
+
+        if CLICKHOUSE_ENABLED:
+            try:
+                ch_df = df.copy()
+                ch_df["report_date"] = pd.to_datetime(day_str)
+                ch_table = f"network_degradation_{job_name}"
+                t_ch = time.monotonic()
+                n = _ch_write(ch_df, table=ch_table, date_column="report_date",
+                               order_by=_CH_ORDER_BY.get(job_name))
+                log(f"[{job_name}] {table} ({day_str}): wrote {n:,} rows "
+                    f"-> ClickHouse `{ch_table}` "
+                    f"({round(time.monotonic() - t_ch, 1)}s)")
+            except Exception as e:
+                # CSV already saved — a ClickHouse hiccup must never lose
+                # the day's export or block state from advancing.
+                log(f"[{job_name}] {table}: ClickHouse write FAILED "
+                    f"(CSV still saved, will NOT auto-retry this day): {e}")
+
         if last_done is None or number > last_done:
             state[job_name] = number
             last_done = number

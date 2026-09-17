@@ -10,3 +10,6 @@ pyhive
 thrift
 thrift_sasl
 pure-sasl
+
+# ClickHouse ingestion/reads (tools/clickhouse_io.py)
+clickhouse-connect

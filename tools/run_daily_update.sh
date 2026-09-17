@@ -16,6 +16,14 @@
 #   crontab -e
 #   15 6 * * * /path/to/ps-core-ops-dashboard/tools/run_daily_update.sh
 
+# ClickHouse: tools/clickhouse_io.py defaults to 127.0.0.1:8123, user
+# "default", no password, database "ps_core_ops" — matching the ClickHouse
+# already running on this box. Override any of these here if yours differs:
+# export CLICKHOUSE_HOST=127.0.0.1
+# export CLICKHOUSE_PORT=8123
+# export CLICKHOUSE_DATABASE=ps_core_ops
+# export CLICKHOUSE_RETENTION_DAYS=30
+
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

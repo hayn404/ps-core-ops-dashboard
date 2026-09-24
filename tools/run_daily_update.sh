@@ -9,7 +9,7 @@
 # One-time setup:
 #   chmod +x tools/run_daily_update.sh
 #   crontab -e
-#   15 6 * * * /path/to/ps-core-ops-dashboard/tools/run_daily_update.sh
+#   15 6 * * * /home/Haneen/ps-core-ops-dashboard/tools/run_daily_update.sh
 #
 # ClickHouse defaults (127.0.0.1:8123, user default, no password, database
 # ps_core_ops) live in tools/clickhouse_io.py; override here if needed:
@@ -17,6 +17,9 @@
 # export CLICKHOUSE_DATABASE=ps_core_ops
 
 set -uo pipefail
+
+# cron's PATH has no Miniconda, where python3.9 lives on udr-10
+export PATH="/home/soror/miniconda3/bin:$PATH"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$REPO_ROOT/tools/daily_update.log"

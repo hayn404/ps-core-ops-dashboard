@@ -1,19 +1,23 @@
 # Systemd unit for the PS Core Operations dashboard hub (port 8820).
+# Filled in for udr-10 (RHEL 7.5, systemd 219).
 #
-# One-time setup on the server:
-#   1. Edit WorkingDirectory / User / Group below to match where you unzip
-#      this repo and which Linux user has the Kerberos ticket / keytab
-#      needed to reach Hive.
-#   2. sudo cp tools/ps-core-ops-dashboard.service /etc/systemd/system/
-#   3. sudo systemctl daemon-reload
-#   4. sudo systemctl enable --now ps-core-ops-dashboard
+# ExecStart must be the FULL path of the python3.9 you run by hand. On udr-10
+# that is Miniconda, not /usr/bin/python3.9 (that path does not exist there,
+# which is what "status=203/EXEC" means). Check it with:  which python3.9
 #
-# Check on it:
+# Install / update:
+#   sudo cp tools/ps-core-ops-dashboard.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable ps-core-ops-dashboard
+#   sudo systemctl restart ps-core-ops-dashboard
+#
+# Check on it (logs go to the journal; systemd 219 has no "append:" file output):
 #   sudo systemctl status ps-core-ops-dashboard
 #   sudo journalctl -u ps-core-ops-dashboard -f
 #
-# Restart after a config/code change:
-#   sudo systemctl restart ps-core-ops-dashboard
+# The hub only reads ClickHouse, so it needs no Kerberos ticket.
+# ClickHouse defaults (127.0.0.1:8123, database ps_core_ops) are in
+# tools/clickhouse_io.py; add Environment=CLICKHOUSE_HOST=... only if yours differs.
 
 [Unit]
 Description=PS Core Operations Dashboard Hub (port 8820)
@@ -21,21 +25,11 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/path/to/ps-core-ops-dashboard
-ExecStart=/usr/bin/python3.9 /path/to/ps-core-ops-dashboard/hub.py --host 0.0.0.0 --port 8820
+WorkingDirectory=/home/Haneen/ps-core-ops-dashboard
+ExecStart=/home/soror/miniconda3/bin/python3.9 /home/Haneen/ps-core-ops-dashboard/hub.py --host 0.0.0.0 --port 8820
+Environment=PYTHONUNBUFFERED=1
 Restart=on-failure
 RestartSec=5
-User=ossuser
-Group=ossuser
-# If Hive auth needs a Kerberos ticket cache set up outside this unit
-# (e.g. renewed by cron via kinit -kt), point at the same cache here:
-# Environment=KRB5CCNAME=FILE:/tmp/krb5cc_ps_core_ops
-# ClickHouse defaults (127.0.0.1:8123, database ps_core_ops) match this
-# server's setup already — only uncomment if yours differs:
-# Environment=CLICKHOUSE_HOST=127.0.0.1
-# Environment=CLICKHOUSE_DATABASE=ps_core_ops
-StandardOutput=append:/path/to/ps-core-ops-dashboard/hub.log
-StandardError=append:/path/to/ps-core-ops-dashboard/hub.log
 
 [Install]
 WantedBy=multi-user.target

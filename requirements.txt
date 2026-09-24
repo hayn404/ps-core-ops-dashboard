@@ -1,33 +1,54 @@
-# Combined requirements for the hub process (which imports and mounts both
-# use cases in a single Python process, so it needs the union of both
-# use cases' dependencies, plus Flask/Werkzeug for the landing page + mount).
-#
-# Server has no internet — install from the offline wheel folders instead:
-#   pip install --no-index \
-#       --find-links usecases/free_rg_smart_care/offline_packages \
-#       -r requirements.txt
-# (network_degradation didn't ship an offline_packages folder — if any
-# package below is missing from the free_rg one's wheels, grab it from
-# an internet-connected machine and drop the .whl in alongside the others.)
+# Exact versions installed on the production server (udr-10, RHEL 7.5,
+# Miniconda Python 3.9.12 at /home/soror/miniconda3), from its `pip freeze`
+# on 2026-09-24. The server already has all of these; this file records them
+# so a test copy can match it. Server has no internet: install offline with
+#   python3.9 -m pip install --no-index --find-links <wheel folder> -r requirements.txt
 
-# Hub / landing page
-flask
-werkzeug
+# Hub / dashboards
+flask==3.1.3
+werkzeug==3.1.8
+blinker==1.9.0
+click==8.1.8
+itsdangerous==2.2.0
+jinja2==3.1.6
+markupsafe==3.0.3
+dash==4.2.0
+plotly==6.8.0
+narwhals==2.21.0
+nest-asyncio==1.6.0
+retrying==1.4.2
+importlib-metadata==8.7.1
+zipp==3.23.1
+typing-extensions==4.15.0
+packaging==26.2
+pandas==2.3.2
+numpy==2.0.2
+python-dateutil==2.9.0.post0
+pytz==2026.2
+tzdata==2026.2
+pyyaml==6.0.3
+xlsxwriter==3.2.9
 
-# Core dashboard (both use cases)
-pandas
-plotly
-dash
-pyyaml
-xlsxwriter
+# ClickHouse
+clickhouse-connect==0.15.1
+lz4==4.4.5
+zstandard==0.25.0
 
-# Live-DB access (Hive + Kerberos over SASL) — both use cases' connect_db()
-pyhive
-thrift
-thrift_sasl
-pure-sasl
-sasl
-kerberos
+# Hive + Kerberos (only etl.py fetch / daily and the free RG live-DB fallback)
+pyhive==0.7.0.dev0
+thrift==0.23.0
+thrift-sasl==0.4.3
+pure-sasl==0.6.2
+future==1.0.0
+janus==2.0.0
+# sasl==0.3.1 and kerberos==1.3.1 are also on the server. Both are C builds
+# (need gcc, cyrus-sasl-devel, krb5-devel), so they are not pinned here.
 
-# ClickHouse ingestion/reads (tools/clickhouse_io.py, shared by both use cases)
-clickhouse-connect
+# Came with Miniconda on the server (conda builds from early 2022; the pip
+# freeze shows file paths instead of versions, these are the matching releases)
+requests==2.27.1
+urllib3==1.26.8
+idna==3.3
+charset-normalizer==2.0.4
+certifi==2021.10.8
+six==1.16.0

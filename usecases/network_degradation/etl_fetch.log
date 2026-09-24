@@ -1,0 +1,196 @@
+nohup: ignoring input
+Connecting to Hive at 10.74.230.68:22550 (Kerberos SPN: spark2x/hadoop.hadoop.com) ...
+  using C sasl library (cyrus-sasl)
+Connected successfully.
+[ipv6] discovering tables (sdr_dyn_ide_soc_tcp_user_15m_%) ...
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:385: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  raw = pd.read_sql(sql, conn)
+  Discovering tables: SHOW TABLES IN sdr_nethouse LIKE 'sdr_dyn_ide_soc_tcp_user_15m_*'
+    -> 61 table(s) found
+[ipv6] 10 candidate table(s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707 (2026-09-10): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707 (2026-09-10): 779,936 rows -> `network_degradation_ipv6` (hive exec 200.6s, fetch 36.5s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20708 (2026-09-11): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20708 (2026-09-11): 816,084 rows -> `network_degradation_ipv6` (hive exec 206.3s, fetch 33.4s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20709 (2026-09-12): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20709 (2026-09-12): 828,037 rows -> `network_degradation_ipv6` (hive exec 307.8s, fetch 30.6s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20710 (2026-09-13): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20710 (2026-09-13): 822,791 rows -> `network_degradation_ipv6` (hive exec 329.9s, fetch 29.7s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20711 (2026-09-14): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20711 (2026-09-14): 894,681 rows -> `network_degradation_ipv6` (hive exec 112.5s, fetch 30.2s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20712 (2026-09-15): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20712 (2026-09-15): 909,988 rows -> `network_degradation_ipv6` (hive exec 272.6s, fetch 25.5s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20713 (2026-09-16): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20713 (2026-09-16): 901,304 rows -> `network_degradation_ipv6` (hive exec 116.4s, fetch 31.2s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20714 (2026-09-17): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20714 (2026-09-17): 902,705 rows -> `network_degradation_ipv6` (hive exec 109.5s, fetch 33.1s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20715 (2026-09-18): exporting ...
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20715 (2026-09-18): 882,503 rows -> `network_degradation_ipv6` (hive exec 105.3s, fetch 34.9s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv6] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20716: 2026-09-19 is still the current (partial) day - later
+[ipv4] discovering tables (sdr_dyn_ide_soc_tcp_user_15m_%) ...
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:385: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  raw = pd.read_sql(sql, conn)
+  Discovering tables: SHOW TABLES IN sdr_nethouse LIKE 'sdr_dyn_ide_soc_tcp_user_15m_*'
+    -> 61 table(s) found
+[ipv4] 10 candidate table(s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707 (2026-09-10): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20707 (2026-09-10): 2,285,733 rows -> `network_degradation_ipv4` (hive exec 39.5s, fetch 72.7s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20708 (2026-09-11): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20708 (2026-09-11): 2,286,393 rows -> `network_degradation_ipv4` (hive exec 90.2s, fetch 60.6s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20709 (2026-09-12): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20709 (2026-09-12): 2,282,923 rows -> `network_degradation_ipv4` (hive exec 32.4s, fetch 77.2s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20710 (2026-09-13): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20710 (2026-09-13): 2,284,670 rows -> `network_degradation_ipv4` (hive exec 140.2s, fetch 93.7s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20711 (2026-09-14): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20711 (2026-09-14): 2,321,531 rows -> `network_degradation_ipv4` (hive exec 53.5s, fetch 74.3s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20712 (2026-09-15): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20712 (2026-09-15): 2,320,798 rows -> `network_degradation_ipv4` (hive exec 64.4s, fetch 68.8s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20713 (2026-09-16): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20713 (2026-09-16): 2,305,198 rows -> `network_degradation_ipv4` (hive exec 40.1s, fetch 60.4s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20714 (2026-09-17): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20714 (2026-09-17): 2,266,778 rows -> `network_degradation_ipv4` (hive exec 87.3s, fetch 104.0s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20715 (2026-09-18): exporting ...
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20715 (2026-09-18): 2,278,460 rows -> `network_degradation_ipv4` (hive exec 59.3s, fetch 88.1s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[ipv4] sdr_nethouse.sdr_dyn_ide_soc_tcp_user_15m_20716: 2026-09-19 is still the current (partial) day - later
+[site] discovering tables (SDR_DYN_IDE_SOC_TCP_CELL_USER_15m_%) ...
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:385: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  raw = pd.read_sql(sql, conn)
+  Discovering tables: SHOW TABLES IN sdr_nethouse LIKE 'SDR_DYN_IDE_SOC_TCP_CELL_USER_15m_*'
+    -> 61 table(s) found
+[site] 10 candidate table(s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20707 (2026-09-10): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20707 (2026-09-10): 2,953,457 rows -> `network_degradation_site` (hive exec 39.0s, fetch 81.5s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20708 (2026-09-11): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20708 (2026-09-11): 3,018,967 rows -> `network_degradation_site` (hive exec 37.7s, fetch 91.6s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20709 (2026-09-12): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20709 (2026-09-12): 3,007,418 rows -> `network_degradation_site` (hive exec 43.1s, fetch 85.5s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20710 (2026-09-13): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20710 (2026-09-13): 2,970,915 rows -> `network_degradation_site` (hive exec 31.2s, fetch 140.0s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20711 (2026-09-14): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20711 (2026-09-14): 2,970,732 rows -> `network_degradation_site` (hive exec 25.6s, fetch 110.1s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20712 (2026-09-15): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20712 (2026-09-15): 2,960,961 rows -> `network_degradation_site` (hive exec 28.7s, fetch 80.2s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20713 (2026-09-16): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20713 (2026-09-16): 2,997,988 rows -> `network_degradation_site` (hive exec 31.3s, fetch 98.1s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20714 (2026-09-17): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20714 (2026-09-17): 2,966,789 rows -> `network_degradation_site` (hive exec 22.1s, fetch 76.6s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20715 (2026-09-18): exporting ...
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20715 (2026-09-18): 3,050,700 rows -> `network_degradation_site` (hive exec 22.0s, fetch 96.6s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20716: 2026-09-19 is still the current (partial) day - later
+[site_cells] discovering tables (SDR_DYN_IDE_SOC_TCP_CELL_USER_15m_%) ...
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:385: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  raw = pd.read_sql(sql, conn)
+  Discovering tables: SHOW TABLES IN sdr_nethouse LIKE 'SDR_DYN_IDE_SOC_TCP_CELL_USER_15m_*'
+    -> 61 table(s) found
+[site_cells] 10 candidate table(s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20707 (2026-09-10): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20707 (2026-09-10): 15,977,588 rows -> `network_degradation_site_cells` (hive exec 50.9s, fetch 649.3s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20708 (2026-09-11): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20708 (2026-09-11): 16,504,759 rows -> `network_degradation_site_cells` (hive exec 78.8s, fetch 651.3s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20709 (2026-09-12): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20709 (2026-09-12): 16,234,467 rows -> `network_degradation_site_cells` (hive exec 85.0s, fetch 724.4s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20710 (2026-09-13): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20710 (2026-09-13): 15,892,622 rows -> `network_degradation_site_cells` (hive exec 71.1s, fetch 704.5s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20711 (2026-09-14): exporting ...
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20711 (2026-09-14): 15,971,425 rows -> `network_degradation_site_cells` (hive exec 93.7s, fetch 628.5s)
+/home/Haneen/ps-core-ops-dashboard/usecases/network_degradation/etl.py:538: UserWarning: pandas only supports SQLAlchemy connectable (engine/connection) or database string URI or sqlite3 DBAPI2 connection. Other DBAPI2 objects are not tested. Please consider using SQLAlchemy.
+  row = pd.read_sql(
+[site_cells] sdr_nethouse.sdr_dyn_ide_soc_tcp_cell_user_15m_20712 (2026-09-15): exporting ...
+    error: TTransportException: unexpected exception
+Could not connect to any of [('10.74.230.68', 22550)]
+Connecting to Hive at 10.74.230.68:22550 (Kerberos SPN: spark2x/hadoop.hadoop.com) ...
+  using C sasl library (cyrus-sasl)
+[site_cells] reconnect attempt 1/3 failed: Could not connect to any of [('10.74.230.68', 22550)]
+Could not connect to any of [('10.74.230.68', 22550)]
+Connecting to Hive at 10.74.230.68:22550 (Kerberos SPN: spark2x/hadoop.hadoop.com) ...
+  using C sasl library (cyrus-sasl)
+[site_cells] reconnect attempt 2/3 failed: Could not connect to any of [('10.74.230.68', 22550)]
+Could not connect to any of [('10.74.230.68', 22550)]
+Connecting to Hive at 10.74.230.68:22550 (Kerberos SPN: spark2x/hadoop.hadoop.com) ...
+  using C sasl library (cyrus-sasl)
+[site_cells] reconnect attempt 3/3 failed: Could not connect to any of [('10.74.230.68', 22550)]
+[site_cells] JOB FAILED
+    error: TTransportException: Could not connect to any of [('10.74.230.68', 22550)]
+Could not connect to any of [('10.74.230.68', 22550)]
+Connecting to Hive at 10.74.230.68:22550 (Kerberos SPN: spark2x/hadoop.hadoop.com) ...
+  using C sasl library (cyrus-sasl)
+[site_cells] reconnect attempt 1/3 failed: Could not connect to any of [('10.74.230.68', 22550)]
+Could not connect to any of [('10.74.230.68', 22550)]
+Connecting to Hive at 10.74.230.68:22550 (Kerberos SPN: spark2x/hadoop.hadoop.com) ...
+  using C sasl library (cyrus-sasl)
+[site_cells] reconnect attempt 2/3 failed: Could not connect to any of [('10.74.230.68', 22550)]
+Could not connect to any of [('10.74.230.68', 22550)]
+Connecting to Hive at 10.74.230.68:22550 (Kerberos SPN: spark2x/hadoop.hadoop.com) ...
+  using C sasl library (cyrus-sasl)
+[site_cells] reconnect attempt 3/3 failed: Could not connect to any of [('10.74.230.68', 22550)]
+[site_cells] could not restore the Hive connection: Could not connect to any of [('10.74.230.68', 22550)]

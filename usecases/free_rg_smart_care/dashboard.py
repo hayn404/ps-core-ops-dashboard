@@ -513,28 +513,28 @@ def pivot_for_chart(df: pd.DataFrame, date_col: str, group_col: str, value_col: 
 # ---------------------------------------------------------------------------
 # UI theme
 # ---------------------------------------------------------------------------
+_FONT = "Inter, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
 C = {
-    "bg": "#f4f6fa",
-    "card": "#ffffff",
-    "navy": "#1f2a44",
-    "navy2": "#2f4b7c",
-    "accent": "#2f6fed",
-    "text": "#1f2a44",
-    "muted": "#8a94a6",
-    "border": "#e6eaf2",
-    "critical": "#d64545",
-    "high": "#e8912d",
-    "medium": "#f2c94c",
-    "ok": "#2ea44f",
-    "purple": "#7c3aed",
-    "teal": "#0d9488",
+    "bg":       "#eef0fc",   # soft lavender page background
+    "card":     "#ffffff",
+    "navy":     "#4f52c9",   # deep indigo
+    "navy2":    "#6c63e6",
+    "accent":   "#5b5fe0",   # primary indigo
+    "lilac":    "#b9b8f5",
+    "text":     "#2b2d4a",
+    "muted":    "#8b8fae",
+    "border":   "#e6e8f8",
+    "critical": "#e5533d",
+    "high":     "#f28c5b",   # warm orange (secondary colour)
+    "medium":   "#f6c177",
+    "ok":       "#3fbf9b",
+    "purple":   "#7c6ae8",
+    "teal":     "#3fbf9b",
 }
 
-CARD_STYLE = {
-    "background": C["card"], "borderRadius": "12px",
-    "padding": "20px 22px",
-    "boxShadow": "0 1px 3px rgba(31,42,68,0.08)"
-}
+CARD_STYLE = {"background": C["card"], "borderRadius": "22px",
+              "padding": "22px 24px",
+              "boxShadow": "0 10px 30px rgba(91,95,224,0.09)"}
 SECTION_TITLE = {"margin": "0 0 4px", "fontSize": "15px",
                  "fontWeight": "700", "color": C["text"]}
 SECTION_SUB = {"margin": "0 0 14px", "fontSize": "12px", "color": C["muted"]}
@@ -547,18 +547,18 @@ REPEAT_FLAG_DAYS = 3
 
 def _chip(text: str, color: str) -> html.Span:
     return html.Span(text, style={
-        "backgroundColor": color, "color": "white", "borderRadius": "10px",
-        "padding": "3px 11px", "fontSize": "10.5px", "fontWeight": "700",
+        "backgroundColor": color, "color": "white", "borderRadius": "999px",
+        "padding": "3px 12px", "fontSize": "10.5px", "fontWeight": "700",
         "letterSpacing": "0.5px"
     })
 
 
 def _stat_card(label: str, value: str, color: str, sub: str = "") -> html.Div:
     return html.Div(
-        style={**CARD_STYLE, "flex": "1", "minWidth": "150px", "padding": "16px 20px"},
+        style={**CARD_STYLE, "flex": "1", "minWidth": "150px", "padding": "18px 22px"},
         children=[
-            html.Div(label, style={**LABEL_STYLE, "marginBottom": "4px"}),
-            html.Div(value, style={"fontSize": "28px", "fontWeight": "800",
+            html.Div(label, style={**LABEL_STYLE, "marginBottom": "6px"}),
+            html.Div(value, style={"fontSize": "32px", "fontWeight": "700",
                                    "color": color, "lineHeight": "1.1"}),
             html.Div(sub, style={"fontSize": "11px", "color": C["muted"],
                                  "marginTop": "2px", "minHeight": "13px"}),
@@ -568,7 +568,8 @@ def _stat_card(label: str, value: str, color: str, sub: str = "") -> html.Div:
 def _empty_figure(msg: str) -> go.Figure:
     fig = go.Figure()
     fig.update_layout(
-        template="plotly_white",
+        template="plotly_white", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family=_FONT, color=C["text"]),
         annotations=[dict(text=msg, showarrow=False,
                           font=dict(size=14, color="#95a5a6"),
                           xref="paper", yref="paper", x=0.5, y=0.5)],
@@ -598,13 +599,46 @@ def _graph(graph_id: str, height: int = 320) -> dcc.Loading:
 
 
 TAB_STYLE = {
-    "padding": "10px 18px", "fontWeight": "600", "fontSize": "13px",
-    "color": C["muted"], "border": "none", "backgroundColor": "transparent",
+    "padding": "9px 22px", "fontWeight": "600", "fontSize": "13px",
+    "color": C["muted"], "border": "none", "borderRadius": "999px",
+    "marginRight": "8px", "background": "#ffffff",
+    "boxShadow": "0 2px 10px rgba(91,95,224,0.07)",
 }
 TAB_SELECTED_STYLE = {
-    **TAB_STYLE, "color": C["accent"],
-    "borderBottom": f"3px solid {C['accent']}",
+    "padding": "9px 22px", "fontWeight": "700", "fontSize": "13px",
+    "border": "none", "borderRadius": "999px", "marginRight": "8px",
+    "background": C["accent"], "color": "#ffffff",
+    "boxShadow": "0 8px 18px rgba(91,95,224,0.35)",
 }
+
+
+_INDEX_HTML = """<!DOCTYPE html>
+<html>
+<head>
+{%metas%}<title>{%title%}</title>{%favicon%}{%css%}
+<style>
+  html, body { margin: 0; background: __BG__; font-family: __FONT__; color: __TEXT__; }
+  * { box-sizing: border-box; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #cfd1f2; border-radius: 8px; }
+  .tab-container, .tab-parent { border: none !important; }
+  .tab { border: none !important; }
+  .rc-slider-track { background-color: __ACCENT__ !important; }
+  .rc-slider-handle { border-color: __ACCENT__ !important; background: #fff !important; }
+  .rc-slider-rail { background-color: #e3e5fa !important; }
+  .Select-control { border-radius: 12px !important; border-color: __BORDER__ !important; }
+  .dash-dropdown, .dash-dropdown-trigger { border-radius: 12px !important; border-color: __BORDER__ !important; }
+  button:hover { filter: brightness(1.06); }
+</style>
+</head>
+<body>
+{%app_entry%}
+<footer>{%config%}{%scripts%}{%renderer%}</footer>
+</body>
+</html>"""
+_INDEX_HTML = (_INDEX_HTML.replace("__BG__", C["bg"]).replace("__FONT__", _FONT)
+               .replace("__TEXT__", C["text"]).replace("__ACCENT__", C["accent"])
+               .replace("__BORDER__", C["border"]))
 
 
 # ---------------------------------------------------------------------------
@@ -616,7 +650,9 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
               apn_filter: list[str], url_base_pathname: str = "/") -> Dash:
 
     app = Dash(__name__, suppress_callback_exceptions=True,
+               title="Free RGs Smart Care",
                url_base_pathname=url_base_pathname)
+    app.index_string = _INDEX_HTML
 
     # Coerce types
     traffic_df = _coerce_types(traffic_df)
@@ -644,36 +680,38 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
     # Layout
     # ------------------------------------------------------------------
     app.layout = html.Div(
-        style={"fontFamily": "Segoe UI, Arial, sans-serif",
+        style={"fontFamily": _FONT,
                "backgroundColor": C["bg"], "minHeight": "100vh",
                "paddingBottom": "40px"},
         children=[
 
             # ── Header ─────────────────────────────────────────────
             html.Div(
-                style={"background": f"linear-gradient(135deg,{C['navy']},{C['navy2']})",
-                       "color": "white", "padding": "20px 32px",
-                       "display": "flex", "alignItems": "center",
-                       "justifyContent": "space-between",
+                style={"padding": "28px 32px 8px", "display": "flex",
+                       "alignItems": "center", "justifyContent": "space-between",
                        "flexWrap": "wrap", "gap": "12px"},
                 children=[
                     html.Div([
-                        html.H1("Free RGs Smart Care Dashboard",
-                                style={"margin": 0, "fontSize": "22px", "fontWeight": "700"}),
-                        html.P("Traffic & subscriber analytics for free rating groups — peer-capped usage monitoring.",
-                               style={"margin": "4px 0 0", "color": "#b9c6e4", "fontSize": "12.5px"}),
+                        html.H1("Free RGs Smart Care",
+                                style={"margin": 0, "fontSize": "26px",
+                                       "fontWeight": "700", "color": C["text"]}),
+                        html.P("Traffic & subscriber analytics for free rating groups — "
+                               "peer-capped usage monitoring.",
+                               style={"margin": "6px 0 0", "color": C["muted"],
+                                      "fontSize": "13px"}),
                     ]),
                     html.Div([
                         html.Div(data_range_txt, style={
-                            "fontSize": "11.5px", "color": "#b9c6e4",
+                            "fontSize": "11.5px", "color": C["muted"],
                             "marginBottom": "6px", "textAlign": "right"}),
                         html.Button(
                             "Download Report", id="download-btn", n_clicks=0,
-                            style={"background": "rgba(255,255,255,0.14)", "color": "white",
-                                   "border": "1px solid rgba(255,255,255,0.35)",
-                                   "borderRadius": "8px", "padding": "9px 18px",
+                            style={"background": f"linear-gradient(135deg,{C['accent']},{C['navy2']})",
+                                   "color": "white", "border": "none",
+                                   "borderRadius": "999px", "padding": "11px 24px",
                                    "fontWeight": "600", "fontSize": "13px",
-                                   "cursor": "pointer", "whiteSpace": "nowrap"},
+                                   "cursor": "pointer", "whiteSpace": "nowrap",
+                                   "boxShadow": "0 8px 20px rgba(91,95,224,0.35)"},
                         ),
                         dcc.Download(id="download-report"),
                     ]),
@@ -743,7 +781,9 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
                     # ── Tabs ──────────────────────────────────────
                     dcc.Tabs(
                         id="tabs", value="tab-overview",
-                        style={"marginBottom": "16px"},
+                        style={"marginBottom": "16px", "border": "none"},
+                        colors={"border": "transparent", "primary": C["accent"],
+                                "background": "transparent"},
                         children=[
 
                             # ── Overview tab ──────────────────────
@@ -1009,7 +1049,8 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
                     stackgroup="one",
                 ))
             fig_traffic.update_layout(
-                template="plotly_white", hovermode="x unified",
+                template="plotly_white", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family=_FONT, color=C["text"]), hovermode="x unified",
                 legend=dict(orientation="h", y=-0.25, x=0),
                 xaxis_title="Day", yaxis_title="Traffic (GB)",
                 margin=dict(t=10, b=40, l=50, r=30),
@@ -1028,7 +1069,8 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
                     stackgroup="one",
                 ))
             fig_users.update_layout(
-                template="plotly_white", hovermode="x unified",
+                template="plotly_white", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family=_FONT, color=C["text"]), hovermode="x unified",
                 legend=dict(orientation="h", y=-0.25, x=0),
                 xaxis_title="Day", yaxis_title="Unique Users",
                 margin=dict(t=10, b=40, l=50, r=30),
@@ -1048,7 +1090,8 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
                     x=pivot_td.index, y=pivot_td[col].round(2), name=col,
                 ))
             fig_traffic_dod.update_layout(
-                template="plotly_white", hovermode="x unified",
+                template="plotly_white", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family=_FONT, color=C["text"]), hovermode="x unified",
                 legend=dict(orientation="h", y=-0.25, x=0),
                 xaxis_title="Day", yaxis_title="Change % vs Prev Day",
                 barmode="group",
@@ -1069,7 +1112,8 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
                     x=pivot_ud.index, y=pivot_ud[col].round(2), name=col,
                 ))
             fig_users_dod.update_layout(
-                template="plotly_white", hovermode="x unified",
+                template="plotly_white", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family=_FONT, color=C["text"]), hovermode="x unified",
                 legend=dict(orientation="h", y=-0.25, x=0),
                 xaxis_title="Day", yaxis_title="Change % vs Prev Day",
                 barmode="group",
@@ -1090,7 +1134,8 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
                 insidetextorientation="horizontal",
             ))
             fig_pie.update_layout(
-                template="plotly_white", showlegend=False,
+                template="plotly_white", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family=_FONT, color=C["text"]), showlegend=False,
                 margin=dict(t=10, b=10, l=10, r=10),
             )
 
@@ -1111,7 +1156,8 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
                 textinfo="label+percent",
             ))
             fig_cap.update_layout(
-                template="plotly_white", showlegend=False,
+                template="plotly_white", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family=_FONT, color=C["text"]), showlegend=False,
                 margin=dict(t=10, b=10, l=10, r=10),
             )
 
@@ -1132,7 +1178,8 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
                     marker_color=C["critical"],
                 ))
                 fig_viol.update_layout(
-                    template="plotly_white",
+                    template="plotly_white", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family=_FONT, color=C["text"]),
                     xaxis_title="Violation Count",
                     yaxis_title="",
                     margin=dict(t=10, b=10, l=150, r=30),
@@ -1169,10 +1216,10 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
                 sort_action="native",
                 page_size=10,
                 style_table={"overflowX": "auto"},
-                style_header={"backgroundColor": "#2c3e50", "color": "white",
+                style_header={"backgroundColor": "#5b5fe0", "color": "white",
                               "fontWeight": "bold", "fontSize": "13px"},
                 style_cell={"padding": "8px 12px", "fontSize": "13px",
-                            "border": "1px solid #f0f0f0"},
+                            "border": "1px solid #eef0fb"},
                 style_data_conditional=[
                     {"if": {"column_id": "Traffic Δ%", "filter_query": "{Traffic Δ%} > 20"},
                      "backgroundColor": "#fdecea", "color": "#c0392b", "fontWeight": "600"},
@@ -1212,10 +1259,10 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
                 export_format="csv",
                 export_headers="display",
                 style_table={"overflowX": "auto"},
-                style_header={"backgroundColor": "#2c3e50", "color": "white",
+                style_header={"backgroundColor": "#5b5fe0", "color": "white",
                               "fontWeight": "bold", "fontSize": "13px"},
                 style_cell={"padding": "8px 12px", "fontSize": "13px",
-                            "border": "1px solid #f0f0f0"},
+                            "border": "1px solid #eef0fb"},
                 style_data_conditional=[
                             {
                                 "if": {
@@ -1266,10 +1313,10 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
                 export_format="csv",
                 export_headers="display",
                 style_table={"overflowX": "auto"},
-                style_header={"backgroundColor": "#2c3e50", "color": "white",
+                style_header={"backgroundColor": "#5b5fe0", "color": "white",
                               "fontWeight": "bold", "fontSize": "13px"},
                 style_cell={"padding": "8px 12px", "fontSize": "13px",
-                            "border": "1px solid #f0f0f0"},
+                            "border": "1px solid #eef0fb"},
                 style_data_conditional=[
                     {"if": {"filter_query": '{Flag} = "REPEAT OFFENDER"'},
                      "backgroundColor": "#fdecea", "color": "#c0392b",
@@ -1306,7 +1353,7 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
         t["day"] = t["myday"].dt.date
 
         fig = go.Figure()
-        colors = {"week": "#95a5a6", "prev": "#3498db", "target": "#e74c3c"}
+        colors = {"week": "#c3c5ee", "prev": "#f28c5b", "target": "#5b5fe0"}
 
         for day, label, key in ((week, f"{week} (week ago)", "week"),
                                   (prev, f"{prev} (day before)", "prev"),
@@ -1324,7 +1371,8 @@ def build_app(traffic_df: pd.DataFrame, users_df: pd.DataFrame,
             ))
 
         fig.update_layout(
-            template="plotly_white",
+            template="plotly_white", paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(family=_FONT, color=C["text"]),
             hovermode="x unified",
             xaxis_title="Rating Group",
             yaxis_title="Traffic (GB)",

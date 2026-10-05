@@ -144,7 +144,16 @@ def _shell_html() -> str:
     body {{ display: flex; }}
     .side {{ flex: 0 0 236px; background: #4f52c9; color: #fff; height: 100vh;
              border-radius: 0 30px 30px 0; padding: 26px 16px; display: flex;
-             flex-direction: column; gap: 6px; }}
+             flex-direction: column; gap: 6px; position: relative;
+             transition: flex-basis .18s ease, padding .18s ease; overflow: hidden; }}
+    body.collapsed .side {{ flex-basis: 76px; padding: 26px 10px; }}
+    body.collapsed .side .lbl, body.collapsed .side .brand div:last-child {{ display: none; }}
+    body.collapsed .side .nav a {{ justify-content: center; padding: 12px 0; width: 48px; }}
+    .toggle {{ position: absolute; top: 24px; right: -14px; width: 28px; height: 28px;
+               border-radius: 50%; background: #fff; color: #4f52c9; border: none;
+               box-shadow: 0 4px 10px rgba(0,0,0,.2); cursor: pointer; font-size: 13px;
+               display: flex; align-items: center; justify-content: center; z-index: 2; }}
+    body.collapsed .toggle {{ transform: rotate(180deg); }}
     .brand {{ display: flex; align-items: center; gap: 12px; padding: 0 8px 22px; }}
     .logo {{ width: 44px; height: 44px; border-radius: 50%; background: #fff; color: #4f52c9;
              font-weight: 800; display: flex; align-items: center; justify-content: center; }}
@@ -166,11 +175,13 @@ def _shell_html() -> str:
       .lbl, .brand div:last-child {{ display: none; }}
       .brand {{ padding-bottom: 16px; }}
       .nav a {{ justify-content: center; padding: 12px 0; width: 48px; }}
+      .toggle {{ display: none; }}
     }}
   </style>
 </head>
 <body>
   <aside class="side">
+    <button class="toggle" id="sideToggle" title="Collapse sidebar" aria-label="Collapse sidebar">&#10094;</button>
     <div class="brand"><div class="logo">PS</div>
       <div><b>PS Core Ops</b><small>Operations dashboards</small></div></div>
     <nav class="nav">
@@ -197,6 +208,13 @@ def _shell_html() -> str:
   }}
   window.addEventListener('hashchange', function () {{ show(location.hash.slice(1)); }});
   show(location.hash.slice(1));
+  var toggle = document.getElementById('sideToggle');
+  var collapsed = localStorage.getItem('nd_sidebar_collapsed') === '1';
+  if (collapsed) document.body.classList.add('collapsed');
+  toggle.addEventListener('click', function () {{
+    document.body.classList.toggle('collapsed');
+    localStorage.setItem('nd_sidebar_collapsed', document.body.classList.contains('collapsed') ? '1' : '0');
+  }});
 </script>
 </body>
 </html>"""

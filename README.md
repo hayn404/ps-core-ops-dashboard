@@ -3,9 +3,9 @@
 One port (8820), several dashboards. Linux server, Python 3.9, ClickHouse as the data layer.
 
 ```
-http://10.80.90.130:8820/                       ONE page: sidebar with a tab per dashboard, the selected dashboard beside it
-http://10.80.90.130:8820/network-degradation/   Network Service Degradation (IPv6 | IPv4 | Pools | Sites)
-http://10.80.90.130:8820/free-rg-smart-care/    Free RGs Smart Care
+http://<server>:8820/                       ONE page: sidebar with a tab per dashboard, the selected dashboard beside it
+http://<server>:8820/network-degradation/   Network Service Degradation (IPv6 | IPv4 | Pools | Sites)
+http://<server>:8820/free-rg-smart-care/    Free RGs Smart Care
 ```
 
 ## Network Degradation: how the data flows

@@ -79,6 +79,8 @@ def load_subnets(days: int) -> pd.DataFrame:
         FROM nd_subnet_hourly
         WHERE report_date >= today() - {int(days)}
         ORDER BY ugw, ip_version, prefix, hour""")
+    if df.empty:   # e.g. etl.py hasn't loaded/rebuilt this lookback window yet
+        return df
     return _num(df, _KPI)
 
 
@@ -657,18 +659,30 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
                                style={"margin": "6px 0 0", "color": C["muted"],
                                       "fontSize": "13px"}),
                     ]),
-                    html.Div([
-                        html.Button(
-                            "Download Report", id="download-btn", n_clicks=0,
-                            style={"background": f"linear-gradient(135deg,{C['accent']},{C['navy2']})",
-                                   "color": "white", "border": "none",
-                                   "borderRadius": "999px", "padding": "11px 24px",
-                                   "fontWeight": "600", "fontSize": "13px",
-                                   "cursor": "pointer", "whiteSpace": "nowrap",
-                                   "boxShadow": "0 8px 20px rgba(91,95,224,0.35)"},
-                        ),
-                        dcc.Download(id="download-report"),
-                    ]),
+                    html.Div(
+                        style={"display": "flex", "gap": "10px", "flexWrap": "wrap"},
+                        children=[
+                            html.Button(
+                                "Export Degraded Pools", id="download-pools-btn", n_clicks=0,
+                                style={"background": "#ffffff", "color": C["accent"],
+                                       "border": f"1.5px solid {C['accent']}",
+                                       "borderRadius": "999px", "padding": "11px 22px",
+                                       "fontWeight": "600", "fontSize": "13px",
+                                       "cursor": "pointer", "whiteSpace": "nowrap"},
+                            ),
+                            dcc.Download(id="download-pools-report"),
+                            html.Button(
+                                "Download Report", id="download-btn", n_clicks=0,
+                                style={"background": f"linear-gradient(135deg,{C['accent']},{C['navy2']})",
+                                       "color": "white", "border": "none",
+                                       "borderRadius": "999px", "padding": "11px 24px",
+                                       "fontWeight": "600", "fontSize": "13px",
+                                       "cursor": "pointer", "whiteSpace": "nowrap",
+                                       "boxShadow": "0 8px 20px rgba(91,95,224,0.35)"},
+                            ),
+                            dcc.Download(id="download-report"),
+                        ],
+                    ),
                 ],
             ),
 
@@ -983,6 +997,7 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
         Output("contrib-gw",      "options"),
         Output("contrib-gw",      "value"),
         Output("tab-caption",     "children"),
+        Output("download-pools-btn", "style"),
         Input("family-tabs",      "value"),
     )
     def switch_tab(tab):
@@ -990,11 +1005,20 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
         (subnet-selector.value is owned by select_entity below.)"""
         df = datasets[tab] if tab in datasets else datasets[first_tab]
         gws = sorted(df["ugw"].dropna().unique())
+        pools_btn_style = {
+            "background": "#ffffff", "color": C["accent"],
+            "border": f"1.5px solid {C['accent']}",
+            "borderRadius": "999px", "padding": "11px 22px",
+            "fontWeight": "600", "fontSize": "13px",
+            "cursor": "pointer", "whiteSpace": "nowrap",
+            "display": "inline-block" if tab in ("IPv4", "IPv6") else "none",
+        }
         return ([{"label": g, "value": g} for g in ["All"] + gws],
                 "All",
                 [{"label": g, "value": g} for g in gws],
                 None,
-                _TAB_CAPTIONS.get(tab, ""))
+                _TAB_CAPTIONS.get(tab, ""),
+                pools_btn_style)
 
     @app.callback(
         Output("subnet-selector", "value"),
@@ -1291,6 +1315,52 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
         tab_tag = (tab or first_tab).lower()
         filename = f"tcp_kpi_{tab_tag}_{mode_tag}_{ts}.csv"
         return dcc.send_data_frame(report.to_csv, filename, index=False)
+
+    @app.callback(
+        Output("download-pools-report", "data"),
+        Input("download-pools-btn",     "n_clicks"),
+        State("family-tabs",      "value"),
+        State("gw-filter",        "value"),
+        State("threshold-slider",         "value"),
+        State("mode-dropdown",            "value"),
+        State("min-hours-slider",         "value"),
+        State("min-history-days-slider",  "value"),
+        prevent_initial_call=True,
+    )
+    def export_pools_report(n_clicks, tab, gw_filter, threshold, mode,
+                            min_hours, min_history_days):
+        """'Degraded subnets grouped by IP pool' panel, as CSV — IPv4/IPv6 only."""
+        if tab not in ("IPv4", "IPv6"):
+            return no_update
+
+        anom = _cached_anomalies(tab, threshold, mode, min_hours, min_history_days)
+        if gw_filter and gw_filter != "All":
+            anom = anom[anom["ugw"] == gw_filter]
+        if anom.empty or "pool" not in anom.columns:
+            return no_update
+
+        a = anom[anom["pool"] != "-"]
+        if a.empty:
+            return no_update
+
+        totals = _pool_totals(tab)
+        g = (a.groupby("pool")
+              .agg(degraded=("prefix", "nunique"), worst=("max_sr_drop", "max"))
+              .reset_index())
+        g["total"] = g["pool"].map(totals).fillna(0).astype(int)
+        g["share_pct"] = (100.0 * g["degraded"] / g["total"].clip(lower=1)).round(1)
+        g["worst"] = g["worst"].round(1)
+        g = g.sort_values(["degraded", "worst"], ascending=False)
+        g = g.rename(columns={
+            "pool": "Pool", "degraded": "Degraded subnets",
+            "total": "Subnets in pool", "share_pct": "% of pool",
+            "worst": "Worst drop (pts)"})
+        g = g[["Pool", "Degraded subnets", "Subnets in pool",
+               "% of pool", "Worst drop (pts)"]]
+
+        ts = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"tcp_kpi_{tab.lower()}_degraded_pools_{ts}.csv"
+        return dcc.send_data_frame(g.to_csv, filename, index=False)
 
     @app.callback(
         Output("kpi-chart",      "figure"),

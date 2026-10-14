@@ -64,6 +64,12 @@ from clickhouse_io import RETENTION_DAYS, get_client, write_dataframe  # noqa: E
 # Tunables ---------------------------------------------------------------------
 BASELINE_DAYS = 10          # window for each site's "own normal" level
 MIN_POOL_SESSIONS = 50_000  # pools below this per hour are not used as peers
+DEAD_SR_MAX_PCT = 1.0       # a subnet whose SR never exceeds this across its
+                             # whole history is permanently dead/broken, not
+                             # real traffic (small, nonzero noise like 0.01%
+                             # or 0.08% still counts as "dead" — only an
+                             # exact 0.0 would, which real noise never is;
+                             # keep in sync with dashboard.py's DEAD_SR_MAX_PCT)
 FIRST_RUN_LOOKBACK_TABLES = 5
 
 RAW = {
@@ -842,6 +848,10 @@ def pool_type_of(pool_name: str) -> str:
 # =============================================================================
 # 3. CLICKHOUSE: tables, staging, transforms
 # =============================================================================
+def _esc(s: str) -> str:
+    return str(s).replace("\\", "\\\\").replace("'", "\\'")
+
+
 def _rows(c, sql: str) -> list:
     return c.query(sql).result_rows
 
@@ -1210,6 +1220,45 @@ def refresh_site_baseline(c) -> None:
               GROUP BY site)""")
 
 
+def purge_dead_subnets(c) -> int:
+    """Permanently remove subnets that have NEVER once carried meaningful
+    traffic (tcp_sr never above DEAD_SR_MAX_PCT) anywhere in their recorded
+    history from nd_subnet_hourly. These are dead/decommissioned/
+    misconfigured subnets, not real service degradation — they always sit
+    "below healthy peers" and would otherwise flood every consumer of this
+    table (dashboard, exports, ad-hoc SQL) with noise rather than
+    actionable anomalies.
+
+    A strict "== 0" check is NOT enough: real measurement noise can put a
+    permanently-broken subnet at 0.008% or 0.08% on some hours instead of an
+    exact 0.0, which would otherwise let it slip through this filter. Using
+    "<= DEAD_SR_MAX_PCT" instead catches those too, while a subnet that was
+    genuinely healthy before a real, recent outage still has a high max
+    (its pre-outage SR) and is correctly left alone.
+
+    max(tcp_sr) is NULL (not 0) for a subnet with no non-null SR at all, so
+    this never matches a subnet that simply has no SR data yet. Self-healing:
+    run on every `transform` call (including the daily cron job), so a
+    subnet is purged the moment enough history confirms it's permanently
+    dead, and nothing needs to be run by hand.
+    """
+    dead = _rows(c, f"""
+        SELECT ugw, ip_version, prefix
+        FROM nd_subnet_hourly
+        GROUP BY ugw, ip_version, prefix
+        HAVING max(tcp_sr) <= {DEAD_SR_MAX_PCT}""")
+    if not dead:
+        return 0
+    for i in range(0, len(dead), 5000):
+        batch = dead[i:i + 5000]
+        tuples = ",".join(
+            "(" + ",".join(f"'{_esc(x)}'" for x in row) + ")" for row in batch)
+        c.command(f"""
+            ALTER TABLE nd_subnet_hourly
+            DELETE WHERE (ugw, ip_version, prefix) IN ({tuples})""")
+    return len(dead)
+
+
 def transform_days(c, days_net: list, days_site: list, parts: set, index: "PoolIndex") -> None:
     """Build derived tables for the given days. Idempotent: re-running a day
     replaces that day's rows."""
@@ -1227,6 +1276,11 @@ def transform_days(c, days_net: list, days_site: list, parts: set, index: "PoolI
         _drop_stage(c)
         if "pool" in parts:
             log(f"[transform] subnet -> pool lookup: {refresh_subnet_pool(c):,} subnets")
+        if "subnet" in parts:
+            n_dead = purge_dead_subnets(c)
+            if n_dead:
+                log(f"[transform] purged {n_dead:,} subnet(s) permanently stuck "
+                    f"at ~0% SR (never above {DEAD_SR_MAX_PCT}%) from nd_subnet_hourly")
     if days_site and parts & {"site", "cells"}:
         for day in sorted(days_site):
             msg = []
@@ -1483,6 +1537,9 @@ def main() -> None:
     p = sub.add_parser("pools", help="reload config/ip_pools.csv")
     p.add_argument("--no-rebuild", action="store_true")
     sub.add_parser("status", help="show what is in the database")
+    sub.add_parser("clean", help="purge subnets permanently stuck near 0%% SR "
+                                 "from nd_subnet_hourly (also runs automatically "
+                                 "on every transform)")
     args = ap.parse_args()
     if not args.cmd:
         args = ap.parse_args(["daily"])
@@ -1498,6 +1555,10 @@ def main() -> None:
             cmd_pools(args, c)
         elif args.cmd == "status":
             cmd_status(args, c)
+        elif args.cmd == "clean":
+            n = purge_dead_subnets(c)
+            log(f"[clean] purged {n:,} subnet(s) permanently stuck near 0% SR"
+                if n else "[clean] nothing to purge - no subnets permanently stuck near 0% SR")
         else:
             cmd_daily(args, c)
     finally:

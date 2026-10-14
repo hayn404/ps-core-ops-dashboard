@@ -16,6 +16,8 @@ in ready-to-read tables. The dashboard itself only runs simple SELECTs.
                                                            peer baselines and sr_drop already computed
                                         nd_pool_hourly     TCP SR / FR2 per IP pool per hour + baselines
                                         nd_pool_daily      one TCP FR2 / SR number per pool per day
+                                        nd_subnet_degraded subnets that fell from THEIR OWN normal and stayed
+                                                           down for days (what the IPv6/IPv4 tabs list)
                                         nd_site_hourly     site-level FR3 per hour
                                         nd_site_baseline   each site's own "normal" level
                                         nd_cell_daily      per-cell FR3 for the site drill-down
@@ -45,9 +47,11 @@ import os
 import re
 import sys
 import time
+import warnings
 from collections import defaultdict, namedtuple
 from datetime import datetime, timedelta
 
+import numpy as np
 import pandas as pd
 import yaml
 
@@ -71,6 +75,23 @@ DEAD_SR_MAX_PCT = 1.0       # a subnet whose SR never exceeds this across its
                              # exact 0.0 would, which real noise never is;
                              # keep in sync with dashboard.py's DEAD_SR_MAX_PCT)
 FIRST_RUN_LOOKBACK_TABLES = 5
+
+# --- "Sustained drop from an established baseline" detector -> nd_subnet_degraded ---
+# A subnet is flagged only if, compared with ITS OWN recent past, it fell and stayed down.
+SUST_MIN_DROP_PTS       = 10     # floor for the drop; the dashboard slider filters above this
+SUST_MIN_DOWN_DAYS      = 3      # consecutive bad days before we call it an incident
+SUST_REF_DAYS           = 7      # days before the drop that define "its normal"
+SUST_MIN_REF_DAYS       = 4      # fewer valid reference days = too new to judge
+SUST_MIN_NORMAL_SR      = 50.0   # normal SR (median of ref) at least this, else it was
+                                 # never healthy (always ~0 SR) -> not a degradation
+SUST_MAX_REF_RANGE      = 25.0   # max-min of ref daily SR; wider = naturally fluctuating
+SUST_RANGE_FACTOR       = 1.5    # drop must also exceed this x its own ref range
+SUST_MAX_DOWN_SR        = 60.0   # a "down" day has SR <= this (failure rate >= 40%)
+SUST_MIN_HOURS_PER_DAY  = 4      # hours with data for a day to count as observed
+SUST_MIN_DAILY_SESSIONS = 2_000  # ... and this much traffic (it must be a live subnet)
+SUST_MIN_TRAFFIC_PCT    = 70.0   # users still "around the same": avg daily sessions during the drop
+                                 # must be >= this % of its normal. Less than that = fewer users,
+                                 # so the SR drop is explained by lost traffic -> NOT flagged
 
 RAW = {
     "ipv6": "network_degradation_ipv6",
@@ -906,6 +927,16 @@ def _ddl() -> dict:
             ENGINE = MergeTree PARTITION BY report_date
             ORDER BY (ip_version, ugw, prefix, hour)
             {_ttl()}""",
+        "nd_subnet_degraded": """
+            CREATE TABLE IF NOT EXISTS nd_subnet_degraded (
+                ugw String, ip_version String, prefix String,
+                first_down Date, last_down Date, days_down UInt16, is_current UInt8,
+                normal_sr Float64, normal_range Float64, current_sr Float64,
+                min_sr Float64, max_sr_drop Float64, max_fr2_rise Nullable(Float64),
+                worst_hour DateTime, first_appeared DateTime,
+                normal_sessions Float64, down_sessions Float64, traffic_pct Float64,
+                computed_at DateTime DEFAULT now())
+            ENGINE = MergeTree ORDER BY (ip_version, ugw, prefix)""",
         "nd_pool_hourly": f"""
             CREATE TABLE IF NOT EXISTS nd_pool_hourly (
                 report_date Date, hour DateTime, pool_id String, gw String,
@@ -1259,6 +1290,244 @@ def purge_dead_subnets(c) -> int:
     return len(dead)
 
 
+# ---- sustained-drop detector -> nd_subnet_degraded ----------------------------
+def find_sustained_drops(daily: pd.DataFrame) -> pd.DataFrame:
+    """`daily`: one row per (ugw, prefix, day[Timestamp]) with sr (session-weighted
+    SR %), sc (sessions) and hrs (hours with data). Returns ONE row per subnet: its
+    most recent run of >= SUST_MIN_DOWN_DAYS consecutive "down" days, judged against
+    the subnet's OWN previous SUST_REF_DAYS days (never against peers). Not flagged:
+      * always ~0 SR       (ref median < SUST_MIN_NORMAL_SR -> never healthy)
+      * fluctuating subnet (ref range > SUST_MAX_REF_RANGE, or the drop is not
+                            bigger than SUST_RANGE_FACTOR x its usual swing)
+      * brand-new subnet / short blip (< SUST_MIN_REF_DAYS history / < SUST_MIN_DOWN_DAYS down)
+    A day is "down" when SR <= ref_median - max(SUST_MIN_DROP_PTS, factor x ref_range)
+    AND SR <= SUST_MAX_DOWN_SR. The reference is frozen at the first down day, so a
+    long outage cannot become the new normal. is_current = still down on the last day.
+    TRAFFIC RULE: a run is kept only if the subnet's average daily sessions while down are
+    >= SUST_MIN_TRAFFIC_PCT of its normal (median of the reference days). If the users went
+    away the SR fell because of lost traffic, not a network problem."""
+    cols = ["ugw", "prefix", "first_down", "last_down", "days_down", "is_current",
+            "normal_sr", "normal_range", "current_sr", "min_sr", "max_sr_drop",
+            "normal_sessions", "down_sessions", "traffic_pct"]
+    d = daily[(daily["hrs"] >= SUST_MIN_HOURS_PER_DAY) & (daily["sc"] >= SUST_MIN_DAILY_SESSIONS)]
+    if d.empty:
+        return pd.DataFrame(columns=cols)
+    mat = d.pivot(index=["ugw", "prefix"], columns="day", values="sr")
+    mat = mat.reindex(columns=pd.date_range(daily["day"].min(), daily["day"].max(), freq="D"))
+    if mat.shape[1] < SUST_MIN_REF_DAYS + SUST_MIN_DOWN_DAYS:
+        return pd.DataFrame(columns=cols)
+    smat = d.pivot(index=["ugw", "prefix"], columns="day", values="sc").reindex(
+        index=mat.index, columns=mat.columns)
+    X = mat.to_numpy(dtype=float)
+    S = smat.to_numpy(dtype=float)
+    n, T = X.shape
+    nan = np.full(n, np.nan)
+
+    active = np.zeros(n, bool)
+    r_med, r_thr, r_rng, r_min, r_last = (nan.copy() for _ in range(5))
+    r_start, r_len = np.full(n, -1), np.zeros(n, int)
+    r_sc, r_sref = np.zeros(n), nan.copy()          # sessions during the run / normal sessions
+    has = np.zeros(n, bool)
+    L = {k: nan.copy() for k in ("med", "rng", "min", "last", "sc", "sref")}
+    L_start, L_end, L_len = np.full(n, -1), np.full(n, -1), np.zeros(n, int)
+
+    def finalize(mask, end_idx):
+        pct = 100.0 * (r_sc / np.maximum(r_len, 1)) / r_sref
+        m = mask & (r_len >= SUST_MIN_DOWN_DAYS) & (pct >= SUST_MIN_TRAFFIC_PCT)
+        if m.any():
+            has[m] = True
+            L["sc"][m], L["sref"][m] = r_sc[m] / r_len[m], r_sref[m]
+            L["med"][m], L["rng"][m] = r_med[m], r_rng[m]
+            L["min"][m], L["last"][m] = r_min[m], r_last[m]
+            L_start[m], L_len[m], L_end[m] = r_start[m], r_len[m], end_idx
+
+    with np.errstate(all="ignore"), warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)   # all-NaN windows are expected
+        for t in range(T):
+            x = X[:, t]
+            ok = ~np.isnan(x)
+            cont = active & ok & (x <= r_thr) & (x <= SUST_MAX_DOWN_SR)
+            finalize(active & ~cont, t - 1)
+            active &= cont
+            r_len[cont] += 1
+            r_min[cont] = np.minimum(r_min[cont], x[cont])
+            r_last[cont] = x[cont]
+            r_sc[cont] += S[cont, t]
+
+            win = X[:, max(0, t - SUST_REF_DAYS):t]
+            if win.shape[1] < SUST_MIN_REF_DAYS:
+                continue
+            nv = (~np.isnan(win)).sum(axis=1)
+            med = np.nanmedian(win, axis=1)
+            rng = np.nanmax(win, axis=1) - np.nanmin(win, axis=1)
+            need = np.maximum(SUST_MIN_DROP_PTS, SUST_RANGE_FACTOR * rng)
+            start = (~active & ok & (nv >= SUST_MIN_REF_DAYS) & (med >= SUST_MIN_NORMAL_SR)
+                     & (rng <= SUST_MAX_REF_RANGE) & (x <= med - need) & (x <= SUST_MAX_DOWN_SR))
+            if start.any():
+                active |= start
+                r_med[start], r_rng[start], r_thr[start] = med[start], rng[start], (med - need)[start]
+                r_start[start], r_len[start] = t, 1
+                r_min[start], r_last[start] = x[start], x[start]
+                r_sc[start] = S[start, t]
+                r_sref[start] = np.nanmedian(S[:, max(0, t - SUST_REF_DAYS):t], axis=1)[start]
+        finalize(active, T - 1)
+
+    if not has.any():
+        return pd.DataFrame(columns=cols)
+    days, idx = mat.columns, mat.index[has]
+    return pd.DataFrame({
+        "ugw": idx.get_level_values(0), "prefix": idx.get_level_values(1),
+        "first_down": days[L_start[has]], "last_down": days[L_end[has]],
+        "days_down": L_len[has], "is_current": (L_end[has] == T - 1).astype(int),
+        "normal_sr": L["med"][has].round(2), "normal_range": L["rng"][has].round(1),
+        "current_sr": L["last"][has].round(2), "min_sr": L["min"][has].round(2),
+        "max_sr_drop": (L["med"][has] - L["min"][has]).round(2),
+        "normal_sessions": L["sref"][has].round(0), "down_sessions": L["sc"][has].round(0),
+        "traffic_pct": (100.0 * L["sc"][has] / L["sref"][has]).round(1)})[cols]
+
+
+def _load_daily(c) -> pd.DataFrame:
+    """One row per (ugw, ip_version, prefix, day): session-weighted SR, sessions, hours."""
+    rows = _rows(c, """
+        SELECT ugw, ip_version, prefix, toString(report_date) AS day,
+               sumIf(tcp_sr * session_count, isNotNull(tcp_sr)) AS w,
+               sumIf(session_count, isNotNull(tcp_sr)) AS sc,
+               uniqExactIf(hour, isNotNull(tcp_sr)) AS hrs
+        FROM nd_subnet_hourly
+        GROUP BY ugw, ip_version, prefix, report_date
+        HAVING sc > 0""")
+    daily = pd.DataFrame(rows, columns=["ugw", "ip_version", "prefix", "day", "w", "sc", "hrs"])
+    daily["day"] = pd.to_datetime(daily["day"])
+    daily["sr"] = daily["w"] / daily["sc"]
+    return daily
+
+
+_DEGRADED_NEW_COLS = ("normal_sessions", "down_sessions", "traffic_pct")
+
+
+def build_degraded(c) -> int:
+    """Rebuild nd_subnet_degraded from nd_subnet_hourly (all retained days).
+    Cheap (a daily GROUP BY + a numpy pass), so it is simply recomputed every run."""
+    for col in _DEGRADED_NEW_COLS:      # table made by an older version -> add the new columns
+        c.command(f"ALTER TABLE nd_subnet_degraded ADD COLUMN IF NOT EXISTS {col} Float64")
+    daily = _load_daily(c)
+    c.command("TRUNCATE TABLE nd_subnet_degraded")
+    if daily.empty:
+        return 0
+    ipv = daily.drop_duplicates(["ugw", "prefix"]).set_index(["ugw", "prefix"])["ip_version"]
+    runs = find_sustained_drops(daily)
+    if runs.empty:
+        return 0
+    runs["ip_version"] = [ipv[(u, p)] for u, p in zip(runs["ugw"], runs["prefix"])]
+
+    # hour-level details for the flagged subnets only: worst hour in the run,
+    # FR2 rise, and when the subnet first showed up in the retained data
+    key = {(r.ugw, r.prefix): r for r in runs.itertuples()}
+    keys = list(key)
+    parts = []
+    for i in range(0, len(keys), 2000):
+        tuples = ",".join("(" + ",".join(f"'{_esc(x)}'" for x in k) + ")" for k in keys[i:i + 2000])
+        parts += _rows(c, f"""
+            SELECT ugw, prefix, hour, tcp_sr, fr2_rise FROM nd_subnet_hourly
+            WHERE (ugw, prefix) IN ({tuples})""")
+    h = pd.DataFrame(parts, columns=["ugw", "prefix", "hour", "tcp_sr", "fr2_rise"])
+    h["hour"] = pd.to_datetime(h["hour"])
+    if getattr(h["hour"].dt, "tz", None) is not None:   # clickhouse-connect returns tz-aware DateTime;
+        h["hour"] = h["hour"].dt.tz_localize(None)       # keep the local wall-clock, like report_date
+    first_app = h.groupby(["ugw", "prefix"])["hour"].min()
+    h = h.merge(runs[["ugw", "prefix", "first_down", "last_down"]], on=["ugw", "prefix"])
+    h = h[(h["hour"] >= h["first_down"]) & (h["hour"] < h["last_down"] + pd.Timedelta(days=1))]
+    worst = h.sort_values("tcp_sr").groupby(["ugw", "prefix"])["hour"].first()
+    fr2 = h.groupby(["ugw", "prefix"])["fr2_rise"].max()
+    runs["worst_hour"] = [worst.get((u, p), pd.NaT) for u, p in zip(runs["ugw"], runs["prefix"])]
+    runs["first_appeared"] = [first_app.get((u, p), pd.NaT) for u, p in zip(runs["ugw"], runs["prefix"])]
+    f = [fr2.get((u, p)) for u, p in zip(runs["ugw"], runs["prefix"])]
+    runs["max_fr2_rise"] = pd.Series([None if v is None or pd.isna(v) else float(v) for v in f],
+                                     dtype=object)
+    runs["worst_hour"] = runs["worst_hour"].fillna(runs["first_down"])
+    runs["first_appeared"] = runs["first_appeared"].fillna(runs["first_down"])
+    for col in ("first_down", "last_down"):
+        runs[col] = runs[col].dt.date
+    c.insert_df("nd_subnet_degraded", runs[[
+        "ugw", "ip_version", "prefix", "first_down", "last_down", "days_down", "is_current",
+        "normal_sr", "normal_range", "current_sr", "min_sr", "max_sr_drop", "max_fr2_rise",
+        "worst_hour", "first_appeared", "normal_sessions", "down_sessions", "traffic_pct"]])
+    return len(runs)
+
+
+def explain_current(c, top: int = 25) -> None:
+    """Why is a subnet NOT flagged? Looks at the CURRENT state only: the last
+    SUST_MIN_DOWN_DAYS days against the SUST_REF_DAYS days before them, and prints
+    how many subnets fall into each reason, plus the near-misses (subnets whose SR
+    really is well below their normal) with the rule that excluded them."""
+    daily = _load_daily(c)
+    d = daily[(daily["hrs"] >= SUST_MIN_HOURS_PER_DAY) & (daily["sc"] >= SUST_MIN_DAILY_SESSIONS)]
+    if d.empty:
+        print("no data"); return
+    days = pd.date_range(daily["day"].min(), daily["day"].max(), freq="D")
+    mat = d.pivot(index=["ugw", "prefix"], columns="day", values="sr").reindex(columns=days)
+    smat = d.pivot(index=["ugw", "prefix"], columns="day", values="sc").reindex(
+        index=mat.index, columns=days)
+    k = SUST_MIN_DOWN_DAYS
+    if len(days) < k + SUST_MIN_REF_DAYS:
+        print("not enough days loaded"); return
+    X, S = mat.to_numpy(float), smat.to_numpy(float)
+    T = X.shape[1]
+
+    def stats(m):
+        """last m days = 'recent', the SUST_REF_DAYS days before them = 'normal'."""
+        rec, ref = X[:, T - m:], X[:, max(0, T - m - SUST_REF_DAYS):T - m]
+        srec, sref = S[:, T - m:], S[:, max(0, T - m - SUST_REF_DAYS):T - m]
+        with np.errstate(all="ignore"), warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            nref = (~np.isnan(ref)).sum(axis=1)
+            nrec = (~np.isnan(rec)).sum(axis=1)
+            med = np.nanmedian(ref, axis=1)
+            rng = np.nanmax(ref, axis=1) - np.nanmin(ref, axis=1)
+            best = np.nanmax(rec, axis=1)          # the BEST of the recent days
+            traffic = 100.0 * np.nanmean(srec, axis=1) / np.nanmedian(sref, axis=1)
+        return dict(nref=nref, nrec=nrec, med=med, rng=rng, worst_recent=best,
+                    drop=med - best, traffic=traffic)
+
+    # the drop may have started more than k days ago: take the LONGEST recent window
+    # (the real start of the drop) in which every day is still >= SUST_MIN_DROP_PTS down
+    st = stats(k)
+    for m in range(k + 1, T - SUST_MIN_REF_DAYS + 1):
+        cur = stats(m)
+        ok = (cur["nrec"] == m) & (cur["nref"] >= SUST_MIN_REF_DAYS) & (cur["drop"] >= SUST_MIN_DROP_PTS)
+        for key in st:
+            st[key] = np.where(ok, cur[key], st[key])
+    nref, nrec, med, rng = st["nref"], st["nrec"], st["med"], st["rng"]
+    worst_recent, drop, traffic = st["worst_recent"], st["drop"], st["traffic"]
+    with np.errstate(all="ignore"):
+        big = drop >= SUST_MIN_DROP_PTS
+    reason = np.full(len(X), "FLAGGED", dtype=object)
+    big = drop >= SUST_MIN_DROP_PTS
+    chain = [
+        (nref < SUST_MIN_REF_DAYS, f"too new (< {SUST_MIN_REF_DAYS} reference days)"),
+        (med < SUST_MIN_NORMAL_SR, f"never healthy (normal SR < {SUST_MIN_NORMAL_SR:.0f}%)"),
+        (nrec < k, f"missing / low-traffic days in last {k}"),
+        (~big, "healthy / no drop"),
+        (rng > SUST_MAX_REF_RANGE, f"fluctuating (normal range > {SUST_MAX_REF_RANGE:.0f} pts)"),
+        (drop < SUST_RANGE_FACTOR * rng, f"drop within its usual swing (< {SUST_RANGE_FACTOR}x range)"),
+        (worst_recent > SUST_MAX_DOWN_SR, f"SR still above {SUST_MAX_DOWN_SR:.0f}% (failure rate not high enough)"),
+        (traffic < SUST_MIN_TRAFFIC_PCT, f"fewer users (traffic < {SUST_MIN_TRAFFIC_PCT:.0f}% of normal)"),
+    ]
+    for cond, name in chain[::-1]:       # earlier rules win
+        reason[np.nan_to_num(cond, nan=False).astype(bool)] = name
+    out = pd.DataFrame({"ugw": mat.index.get_level_values(0), "prefix": mat.index.get_level_values(1),
+                        "reason": reason, "normal_sr": med.round(1), "recent_best_sr": worst_recent.round(1),
+                        "drop": drop.round(1), "range": rng.round(1), "traffic_pct": traffic.round(0)})
+    print(f"\nCurrent-state check up to {days[-1].date()}: for each subnet, its latest run of "
+          f"down days (at least {k}) vs the {SUST_REF_DAYS} days before the run\n")
+    print(out["reason"].value_counts().to_string())
+    near = out[~out["reason"].isin(["healthy / no drop", "FLAGGED"]) & (out["drop"] >= SUST_MIN_DROP_PTS)]
+    near = near.sort_values("drop", ascending=False)
+    print(f"\nNear-misses: SR at least {SUST_MIN_DROP_PTS} pts below normal for {k}+ days "
+          f"but NOT flagged ({len(near):,}); top {top}:\n")
+    print(near.head(top).to_string(index=False) if len(near) else "(none)")
+
+
 def transform_days(c, days_net: list, days_site: list, parts: set, index: "PoolIndex") -> None:
     """Build derived tables for the given days. Idempotent: re-running a day
     replaces that day's rows."""
@@ -1281,6 +1550,10 @@ def transform_days(c, days_net: list, days_site: list, parts: set, index: "PoolI
             if n_dead:
                 log(f"[transform] purged {n_dead:,} subnet(s) permanently stuck "
                     f"at ~0% SR (never above {DEAD_SR_MAX_PCT}%) from nd_subnet_hourly")
+    if parts & {"subnet", "degraded"}:
+        n = build_degraded(c)
+        log(f"[transform] nd_subnet_degraded: {n:,} subnet(s) with a sustained drop from "
+            f"their own normal ({_scalar(c, 'SELECT countIf(is_current = 1) FROM nd_subnet_degraded', 0):,} still down)")
     if days_site and parts & {"site", "cells"}:
         for day in sorted(days_site):
             msg = []
@@ -1469,7 +1742,11 @@ def cmd_transform(args, c) -> None:
     index = _index()
     if not _rows(c, "SELECT 1 FROM dim_pool LIMIT 1"):
         load_pool_dimension(c, index)
-    parts = set(args.parts.split(",")) if args.parts else {"subnet", "pool", "site", "cells"}
+    parts = set(args.parts.split(",")) if args.parts else {"subnet", "pool", "site", "cells", "degraded"}
+    if parts == {"degraded"}:           # standalone: no day building, just re-detect
+        n = build_degraded(c)
+        log(f"[transform] nd_subnet_degraded: {n:,} subnet(s)")
+        return
     all_net = sorted(_days_in(c, RAW["ipv6"]) & _days_in(c, RAW["ipv4"]))
     all_site = sorted(_days_in(c, RAW["site"]))
     if args.date:
@@ -1504,7 +1781,7 @@ def cmd_status(args, c) -> None:
               "network_degradation_site", "network_degradation_site_cells",
               "nd_subnet_hourly", "nd_pool_hourly", "nd_pool_daily",
               "nd_site_hourly", "nd_site_baseline", "nd_cell_daily",
-              "nd_subnet_pool", "dim_pool", "nd_subnet_pool_map", "nd_ingest_log"):
+              "nd_subnet_degraded", "nd_subnet_pool", "dim_pool", "nd_subnet_pool_map", "nd_ingest_log"):
         try:
             n = _scalar(c, f"SELECT count() FROM {t}", 0)
             col = "report_date" if "report_date" in {r[0] for r in _rows(
@@ -1533,10 +1810,11 @@ def main() -> None:
     t.add_argument("--days", type=int, default=30, help="with --rebuild: newest N days")
     t.add_argument("--date", help="one day, YYYY-MM-DD (always rebuilt)")
     t.add_argument("--rebuild", action="store_true", help="rebuild even days already done")
-    t.add_argument("--parts", help="comma list of subnet,pool,site,cells (default all)")
+    t.add_argument("--parts", help="comma list of subnet,pool,site,cells,degraded (default all)")
     p = sub.add_parser("pools", help="reload config/ip_pools.csv")
     p.add_argument("--no-rebuild", action="store_true")
     sub.add_parser("status", help="show what is in the database")
+    sub.add_parser("explain", help="why subnets are / are not flagged as degraded (current state)")
     sub.add_parser("clean", help="purge subnets permanently stuck near 0%% SR "
                                  "from nd_subnet_hourly (also runs automatically "
                                  "on every transform)")
@@ -1555,6 +1833,8 @@ def main() -> None:
             cmd_pools(args, c)
         elif args.cmd == "status":
             cmd_status(args, c)
+        elif args.cmd == "explain":
+            explain_current(c)
         elif args.cmd == "clean":
             n = purge_dead_subnets(c)
             log(f"[clean] purged {n:,} subnet(s) permanently stuck near 0% SR"

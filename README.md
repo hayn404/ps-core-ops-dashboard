@@ -1,11 +1,11 @@
 # PS Core Operations Dashboard
 
-One port (8820), several dashboards. Linux server, Python 3.9, ClickHouse as the data layer.
+One port (8820), several dashboards. Linux server (10.80.90.130), Python 3.9, ClickHouse as the data layer.
 
 ```
-http://<server>:8820/                       ONE page: sidebar with a tab per dashboard, the selected dashboard beside it
-http://<server>:8820/network-degradation/   Network Service Degradation (IPv6 | IPv4 | Pools | Sites)
-http://<server>:8820/free-rg-smart-care/    Free RGs Smart Care
+http://10.80.90.130:8820/                   ONE page: sidebar with a tab per dashboard, the selected dashboard beside it
+http://10.80.90.130:8820/network-degradation/   Network Service Degradation (IPv6 | IPv4 | Pools | Sites)
+http://10.80.90.130:8820/free-rg-smart-care/    Free RGs Smart Care
 ```
 
 ## Network Degradation: how the data flows
@@ -19,6 +19,7 @@ Hive (sdr_nethouse) --etl.py fetch--> RAW tables in ClickHouse
    nd_subnet_hourly   IPv6 rolled up to /48 + IPv4 /24, peer baseline and sr_drop precomputed
    nd_pool_hourly     TCP SR / FR2 per IP pool per hour, baseline vs same-type pools of other gateways
    nd_pool_daily      ONE TCP FR2 / SR number per pool per day (what the manager asked for)
+   nd_subnet_degraded subnets that fell from THEIR OWN normal and stayed down for days (IPv6/IPv4 tabs list this)
    nd_site_hourly     site-level FR3 per hour        nd_site_baseline  each site's own normal level
    nd_cell_daily      per-cell FR3, queried per site when you click a site
                                      DIMENSIONS / STATE
@@ -99,6 +100,21 @@ pools' own TCP SR / FR2 trend.
 
 If you already deployed the previous version, apply this one with:
 `python3.9 etl.py transform --days 30 --rebuild --parts pool` (builds `nd_subnet_pool`), then restart the dashboard.
+
+## Which subnets count as "degraded" (IPv6 / IPv4 tabs)
+
+Decided in `etl.py` (`find_sustained_drops`, tunables `SUST_*` at the top), stored in `nd_subnet_degraded`,
+rebuilt on every `transform`/`daily`. The dashboard only filters that table. A subnet is listed only if it
+fell from **its own** normal (median of its previous 7 days) and stayed down:
+* not listed: always ~0 SR (own normal < 50%), naturally fluctuating (range of its normal days > 25 pts, or the
+  drop is not bigger than 1.5x that range), too new (< 4 reference days), short blip (< 3 consecutive down days)
+* traffic rule: the subnet's average daily sessions while down must be >= 70% of its normal (`SUST_MIN_TRAFFIC_PCT`).
+  Fewer users = the SR fell because of lost traffic, so it is NOT listed. Only session counts exist in the data (no upload bytes)
+* a "down" day = daily SR >= 10 pts (slider: 10-40) below its normal AND SR <= 60% (failure rate >= 40%)
+* View dropdown: *Currently impacted* = still down on the latest day, *Recovered* = was down, back to normal
+* re-run only the detector after changing thresholds: `python3.9 etl.py transform --parts degraded`
+* why is subnet X not listed? `python3.9 etl.py explain` (counts per excluding rule + the near-misses)
+* test: `python3.9 test_sustained.py` (synthetic data, no database needed)
 
 ## Rules baked into the pool tables
 

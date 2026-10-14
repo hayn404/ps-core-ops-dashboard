@@ -42,6 +42,7 @@ MIN_LOOKBACK_DAYS = 10      # the day-compare panel needs "same weekday last wee
 MIN_POOL_SESSIONS = 50_000  # keep in sync with etl.py (pools below this are noise)
 
 
+
 def load_config() -> dict:
     with open(CONFIG_PATH) as f:
         return yaml.safe_load(f)
@@ -66,6 +67,46 @@ def _num(df: pd.DataFrame, cols) -> pd.DataFrame:
     for c in cols:
         df[c] = pd.to_numeric(df[c], errors="coerce")
     return df
+
+
+_DEGRADED = pd.DataFrame()   # nd_subnet_degraded, filled once in load_and_build
+
+
+def load_degraded() -> pd.DataFrame:
+    """Subnets etl.py found to have fallen from THEIR OWN normal and stayed down
+    (table nd_subnet_degraded). All the detection logic lives in etl.py."""
+    try:
+        df = _ch_df("""
+            SELECT ugw, ip_version, prefix, first_down, last_down, days_down, is_current,
+                   normal_sr, normal_range, current_sr, max_sr_drop, max_fr2_rise,
+                   worst_hour, first_appeared, traffic_pct
+            FROM nd_subnet_degraded""")
+    except Exception as e:   # table not built yet -> run: etl.py transform --parts degraded
+        print(f"nd_subnet_degraded not available ({e}); run: python3.9 etl.py transform --parts degraded")
+        return pd.DataFrame()
+    for c in ("first_down", "last_down"):
+        df[c] = pd.to_datetime(df[c])
+    return _num(df, ["normal_sr", "normal_range", "current_sr", "max_sr_drop", "max_fr2_rise", "days_down", "traffic_pct"])
+
+
+def degraded_anomalies(tab: str, drop_threshold: float, mode: str,
+                       min_history_days: float = 0.0) -> pd.DataFrame:
+    """The IPv6/IPv4 anomaly list: a plain filter over the precomputed table."""
+    cols = ["ugw", "ip_version", "prefix", "current_sr", "normal_sr", "max_sr_drop",
+            "max_fr2_rise", "first_seen", "worst_hour", "days_down", "normal_range",
+            "traffic_pct", "first_appeared"]
+    d = _DEGRADED
+    if d.empty:
+        return pd.DataFrame(columns=cols)
+    d = d[(d["ip_version"] == tab) & (d["max_sr_drop"] >= drop_threshold)]
+    if mode == "current":
+        d = d[d["is_current"] == 1]
+    elif mode == "recovered":
+        d = d[d["is_current"] == 0]
+    if min_history_days:
+        d = d[d["first_appeared"] <= pd.Timestamp.now() - pd.Timedelta(days=float(min_history_days))]
+    return (d.rename(columns={"first_down": "first_seen"})[cols]
+             .sort_values("max_sr_drop", ascending=False).reset_index(drop=True))
 
 
 _KPI = ["session_count", "tcp_sr", "tcp_fr2", "baseline_sr", "baseline_fr2", "sr_drop", "fr2_rise"]
@@ -555,7 +596,9 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
     first_tab   = next(iter(datasets))
     first_df    = datasets[first_tab]
     gateways    = ["All"] + sorted(first_df["ugw"].dropna().unique())
-    all_anom    = find_anomalies(first_df, default_threshold)
+    all_anom    = (degraded_anomalies(first_tab, default_threshold, "current")
+                   if first_tab in ("IPv6", "IPv4")
+                   else find_anomalies(first_df, default_threshold))
     subnet_options = _build_subnet_options(all_anom)
 
     # find_anomalies is expensive on multi-million-row families (IPv4) and
@@ -568,9 +611,12 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
                int(min_history_days))
         if key not in _anom_cache:
             df = datasets[tab] if tab in datasets else datasets[first_tab]
-            _anom_cache[key] = _attach_pool(find_anomalies(
-                df, threshold, mode=mode, min_hours=min_hours,
-                min_history_days=min_history_days), tab)
+            if tab in ("IPv6", "IPv4"):
+                found = degraded_anomalies(tab, threshold, mode, min_history_days)
+            else:
+                found = find_anomalies(df, threshold, mode=mode, min_hours=min_hours,
+                                       min_history_days=min_history_days)
+            _anom_cache[key] = _attach_pool(found, tab)
         return _anom_cache[key]
 
     _pool_total_cache: dict = {}
@@ -778,9 +824,9 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
                                                            style=LABEL_STYLE),
                                                 dcc.Slider(
                                                     id="threshold-slider",
-                                                    min=5, max=40, step=1,
+                                                    min=10, max=40, step=1,
                                                     value=int(default_threshold),
-                                                    marks={5: "5", 10: "10", 15: "15",
+                                                    marks={10: "10", 15: "15",
                                                            20: "20", 30: "30", 40: "40"},
                                                     tooltip={"placement": "bottom",
                                                              "always_visible": False}),
@@ -1056,7 +1102,9 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
         if gw_filter != "All":
             anom = anom[anom["ugw"] == gw_filter]
 
-        label = f"Sensitivity — drop greater than {threshold} pts vs healthy peers"
+        label = (f"Sensitivity — fell at least {threshold} pts below its OWN normal"
+                 if tab in ("IPv6", "IPv4") else
+                 f"Sensitivity — drop greater than {threshold} pts vs healthy peers")
 
         n_total    = len(anom)
         n_critical = int((anom["max_sr_drop"] > 30).sum()) if not anom.empty else 0
@@ -1161,7 +1209,11 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
                     html.Div(
                         f"{r['ugw']} · "
                         + (f"pool {r['pool']} · " if "pool" in r.index and r["pool"] != "-" else "")
-                        + f"drop {r['max_sr_drop']:.1f} pts · since {first}",
+                        + f"drop {r['max_sr_drop']:.1f} pts · since {first}"
+                        + (f" · {int(r['days_down'])}d down (normal SR {r['normal_sr']:.0f}%)"
+                           + (f" · traffic {r['traffic_pct']:.0f}% of normal"
+                              if "traffic_pct" in r.index and pd.notna(r["traffic_pct"]) else "")
+                           if "days_down" in r.index and pd.notna(r["days_down"]) else ""),
                         style={"fontSize": "11px", "color": C["muted"],
                                "marginTop": "4px"}),
                 ],
@@ -1303,6 +1355,12 @@ def build_app(datasets: "dict[str, pd.DataFrame]", ip_df: pd.DataFrame,
                      "first_appeared", "first_seen", "worst_hour"]
             names += ["Current SR (%)", "Healthy Peer SR (%)", "SR Drop (pts)",
                       "FR2 Rise (pts)", "First Appeared", "First Seen", "Worst Hour"]
+            if "days_down" in report.columns:
+                cols.insert(cols.index("current_sr"), "days_down"); names.insert(len(names) - 7, "Days Down")
+                names[names.index("Healthy Peer SR (%)")] = "Own Normal SR (%)"
+            if "traffic_pct" in report.columns:
+                cols.insert(cols.index("max_sr_drop") + 1, "traffic_pct")
+                names.insert(names.index("SR Drop (pts)") + 1, "Traffic vs Normal (%)")
             report = report[cols]
             report.columns = names
         for col in ("First Appeared", "First Seen", "Worst Hour"):
@@ -1780,6 +1838,10 @@ def load_and_build(args, url_base_pathname: str = "/"):
     _SUBNET_POOL.update(load_subnet_pool())
     print(f"Loaded {len(_SUBNET_POOL):,} subnet -> pool mappings")
 
+    global _DEGRADED
+    _DEGRADED = load_degraded()
+    print(f"Loaded {len(_DEGRADED):,} sustained-drop subnets from nd_subnet_degraded")
+
     subnets = load_subnets(lookback)
     if subnets.empty:
         raise SystemExit("No rows in nd_subnet_hourly. Build the tables first:\n"
@@ -1807,7 +1869,8 @@ def load_and_build(args, url_base_pathname: str = "/"):
         print(f"  -> {len(sites):,} site-hours, {sites['prefix'].nunique()} sites")
 
     for label, d in datasets.items():
-        n_anom = len(find_anomalies(d, threshold))
+        n_anom = (len(degraded_anomalies(label, threshold, "current"))
+                  if label in ("IPv6", "IPv4") else len(find_anomalies(d, threshold)))
         print(f"[{label}] {d['prefix'].nunique()} entities, "
               f"{n_anom} impacted (SR drop > {threshold}%)")
 
